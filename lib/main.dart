@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tubes_pm_kelompok1/assets/Nav/navbar.dart';
 import 'package:tubes_pm_kelompok1/splash.dart';
 import 'login.dart';
 import 'dashboard.dart';
@@ -23,7 +24,7 @@ class MyApp extends StatelessWidget {
           fontFamily: 'Poppins',
           scaffoldBackgroundColor: const Color(0xFFF3EEDF),
       ),
-      home: const DashboardPage(), // aslinya SplashScreen()
+      home: const SplashScreen(), // aslinya SplashScreen()
     );
   }
 }
