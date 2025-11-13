@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tubes_pm_kelompok1/login.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -10,7 +11,6 @@ class DashboardPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3EEDF),
-      // 🔹 Drawer Menu
       drawer: Drawer(
         backgroundColor: const Color(0xFFF3EEDF),
         child: ListView(
@@ -50,11 +50,21 @@ class DashboardPage extends StatelessWidget {
               title: const Text('About'),
               onTap: () {},
             ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                );
+              },
+            ),
           ],
         ),
       ),
 
-      // 🔹 Body utama
+      //  Body utama
       body: SafeArea(
         child: Stack(
           children: [
@@ -77,7 +87,6 @@ class DashboardPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 🔹 Header
                   Padding(
                     padding: const EdgeInsets.only(top: 30, bottom: 20),
                     child: Row(
@@ -103,7 +112,7 @@ class DashboardPage extends StatelessWidget {
                             ),
                           ],
                         ),
-                        // 🔹 Icon Setting
+                        //  Icon Setting
                         Builder(
                           builder: (context) => IconButton(
                             icon: const Icon(Icons.settings, color: Colors.white, size: 28),
@@ -118,7 +127,6 @@ class DashboardPage extends StatelessWidget {
 
                   const SizedBox(height: 10),
 
-                  // 🔹 Balance Card
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -157,7 +165,7 @@ class DashboardPage extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
-                  // 🔹 Expense & Income
+                  //  Expense & Income
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -183,7 +191,7 @@ class DashboardPage extends StatelessWidget {
 
                   const SizedBox(height: 30),
 
-                  // 🔹 Recently Activity
+                  //  Recently Activity
                   Text(
                     "Recently activity",
                     style: GoogleFonts.poppins(
@@ -194,7 +202,7 @@ class DashboardPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
 
-                  // 🔹 Search Field
+                  //  Search Field
                   TextField(
                     decoration: InputDecoration(
                       hintText: "What are you looking for?",
@@ -210,7 +218,7 @@ class DashboardPage extends StatelessWidget {
 
                   const SizedBox(height: 15),
 
-                  // 🔹 Filter Row
+                  //  Filter Row
                   Row(
                     children: [
                       const Icon(Icons.filter_alt_outlined, color: Color(0xFFC86623)),
@@ -230,7 +238,6 @@ class DashboardPage extends StatelessWidget {
 
                   const SizedBox(height: 15),
 
-                  // 🔹 Activity Items
                   _activityItem("Beli Cilok", "Rp20.000.000,00", Colors.red),
                   _activityItem("Dapat Sedekah", "Rp25.000.000,00", Colors.green),
                   _activityItem("Dapat Sedekah", "Rp25.000.000,00", Colors.green),
@@ -241,35 +248,10 @@ class DashboardPage extends StatelessWidget {
           ],
         ),
       ),
-
-      // 🔹 Bottom Navigation Bar (tetap di bawah)
-      bottomNavigationBar: BottomAppBar(
-        color: const Color(0xFFE0AA00),
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        child: SizedBox(
-          height: 65,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              IconButton(icon: const Icon(Icons.home, color: Colors.white), onPressed: () {}),
-              const SizedBox(width: 30),
-              IconButton(icon: const Icon(Icons.person, color: Colors.white), onPressed: () {}),
-            ],
-          ),
-        ),
-      ),
-
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF00713D),
-        onPressed: () {},
-        child: const Icon(Icons.add, color: Colors.white, size: 32),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
-  // 🔸 Widget kecil untuk summary card
+  //  Widget kecil untuk summary card
   Widget _summaryCard({
     required String title,
     required String value,
@@ -320,7 +302,7 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  // 🔸 Filter Chip
+  //  Filter Chip
   Widget _filterChip(String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -336,7 +318,7 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  // 🔸 Activity item
+  // Activity item
   Widget _activityItem(String title, String value, Color color) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -358,7 +340,7 @@ class DashboardPage extends StatelessWidget {
           Row(
             children: [
               Icon(
-                color == Colors.green ? Icons.arrow_downward : Icons.arrow_upward,
+                color == Colors.red ? Icons.arrow_downward : Icons.arrow_upward,
                 color: color,
               ),
               const SizedBox(width: 8),

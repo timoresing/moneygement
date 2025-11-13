@@ -24,9 +24,17 @@ Moneygement adalah aplikasi berbasis mobile yang dirancang untuk memudahkan peng
 ## UI Design
 [Link Figma](https://www.figma.com/design/YIaG2HQBSinfTLiUmwndMx/Figma-Project-PM-Kelompok-1?node-id=0-1&t=BUz2gTUJJ7SYeMYS-1)
 
+## API
+[Moneygement API](https://github.com/Perry1611/moneygement-backend)
+
+## Features
+
+### Guest / Pengunjung
+- Melakukan Register
+- Melakukan Login
+- 
 
 [//]: # (This project is a starting point for a Flutter application.)
-
 [//]: # ()
 [//]: # (A few resources to get you started if this is your first Flutter project:)
 

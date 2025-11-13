@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tubes_pm_kelompok1/assets/Nav/navbar.dart';
+import 'package:tubes_pm_kelompok1/dashboard.dart';
 import 'register.dart';
 
 class LoginPage extends StatelessWidget {
@@ -109,10 +111,9 @@ class LoginPage extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Login pressed'),
-                            )
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => Navbar()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
