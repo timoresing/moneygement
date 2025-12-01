@@ -74,6 +74,9 @@ class RegisterPage extends StatelessWidget {
                       decoration: InputDecoration(
                         labelText: 'Username',
                         hintText: 'johndoe123',
+                        hintStyle: TextStyle(
+                          color: Colors.black.withOpacity(0.4),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                         prefixIcon: const Icon(Icons.person_outline),
@@ -91,6 +94,9 @@ class RegisterPage extends StatelessWidget {
                       decoration: InputDecoration(
                         labelText: 'Email',
                         hintText: 'johndoe@gmail.com',
+                        hintStyle: TextStyle(
+                          color: Colors.black.withOpacity(0.4),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                         prefixIcon: const Icon(Icons.email_outlined),
@@ -108,6 +114,9 @@ class RegisterPage extends StatelessWidget {
                       decoration: InputDecoration(
                         labelText: 'Password',
                         hintText: 'Your Password',
+                        hintStyle: TextStyle(
+                          color: Colors.black.withOpacity(0.4),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                         prefixIcon: const Icon(Icons.lock_outline),
@@ -125,6 +134,9 @@ class RegisterPage extends StatelessWidget {
                       decoration: InputDecoration(
                         labelText: 'Confirm Password',
                         hintText: 'Re-enter your password',
+                        hintStyle: TextStyle(
+                          color: Colors.black.withOpacity(0.4),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                         prefixIcon: const Icon(Icons.lock_outline),

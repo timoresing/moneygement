@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tubes_pm_kelompok1/assets/Nav/navbar.dart';
-import 'package:tubes_pm_kelompok1/dashboard.dart';
+import 'package:tubes_pm_kelompok1/screens/Nav/navbar.dart';
+import 'package:tubes_pm_kelompok1/screens/dashboard.dart';
 import 'register.dart';
 
 class LoginPage extends StatelessWidget {
@@ -78,6 +78,9 @@ class LoginPage extends StatelessWidget {
                       decoration: InputDecoration(
                         labelText: 'Email',
                         hintText: 'johndoe@gmail.com',
+                        hintStyle: TextStyle(
+                          color: Colors.black.withOpacity(0.4),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                         prefixIcon: const Icon(Icons.email_outlined),
@@ -95,6 +98,9 @@ class LoginPage extends StatelessWidget {
                       decoration: InputDecoration(
                         labelText: 'Password',
                         hintText: 'Your Password',
+                        hintStyle: TextStyle(
+                          color: Colors.black.withOpacity(0.4),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                         prefixIcon: const Icon(Icons.lock_outline),
@@ -132,19 +138,7 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 5),
-
-                    // FORGOT PASSWORD
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text(
-                        'Forgot password?',
-                        style: TextStyle(
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 15),
 
                     // REGISTER LINK
                     Row(

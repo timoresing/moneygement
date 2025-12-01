@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tubes_pm_kelompok1/assets/Nav/navbar.dart';
-import 'package:tubes_pm_kelompok1/splash.dart';
+import 'package:tubes_pm_kelompok1/screens/Nav/navbar.dart';
+import 'package:tubes_pm_kelompok1/screens/splash.dart';
 import 'login.dart';
 import 'dashboard.dart';
 

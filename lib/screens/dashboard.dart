@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tubes_pm_kelompok1/login.dart';
+import 'package:tubes_pm_kelompok1/screens/login.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
