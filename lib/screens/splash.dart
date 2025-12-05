@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'login.dart'; // pastikan file login_page.dart sudah ada
+import 'Nav/auth_wrapper.dart';
+import 'login.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,6 +15,16 @@ class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeInAnimation;
+
+  void _navigateToNextScreen() {
+    Navigator.of(context).pushReplacement(PageRouteBuilder(
+      transitionDuration: const Duration(milliseconds: 900),
+      pageBuilder: (_, __, ___) => AuthWrapper(),
+      transitionsBuilder: (_, animation, __, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+    ));
+  }
 
   @override
   void initState() {
@@ -30,15 +41,8 @@ class _SplashScreenState extends State<SplashScreen>
     );
     _controller.forward();
 
-    // Setelah 3 detik, navigasi ke halaman login dengan transisi fade
     Timer(const Duration(seconds: 3), () {
-      Navigator.of(context).pushReplacement(PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 900),
-        pageBuilder: (_, __, ___) => const LoginPage(),
-        transitionsBuilder: (_, animation, __, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-      ));
+      _navigateToNextScreen();
     });
   }
 

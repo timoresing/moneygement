@@ -3,9 +3,29 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:tubes_pm_kelompok1/screens/Nav/navbar.dart';
 import 'package:tubes_pm_kelompok1/screens/dashboard.dart';
 import 'register.dart';
+import 'package:tubes_pm_kelompok1/service/auth_service.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
+
+  // Handle login menggunakan Google
+  void _handleGoogleSignIn() async {
+    final authService = AuthService();
+    try {
+      final user = await authService.signInWithGoogle();
+
+      if (user != null) {
+        // Login berhasil!
+        print("Login Berhasil: ${user.email}");
+      } else {
+        // Login dibatalkan / gagal
+        print("Login dibatalkan oleh user.");
+      }
+    } catch (e) {
+      // Tampilkan error
+      print("Error: ${e}");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,11 +160,60 @@ class LoginPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 15),
 
+                    // --- DIVIDER ATAU ---
+                    Row(
+                      children: [
+                        Expanded(child: Divider(color: Colors.grey[400])),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Text(
+                            "Or continue with",
+                            style: TextStyle(
+                              color: Colors.black
+                            )
+                          ),
+                        ),
+                        Expanded(child: Divider(color: Colors.grey[400])),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // GOOGLE BUTTON
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed:_handleGoogleSignIn,
+                        icon: Image.asset(
+                          'lib/assets/images/google-icon.png',
+                          height: 20,
+                          width: 20,
+                        ),
+                        label: Text(
+                          'Sign in with Google',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.grey, width: 0.5),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
                     // REGISTER LINK
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Don't have an account? "),
+                        const Text("Try another way? "),
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -153,7 +222,7 @@ class LoginPage extends StatelessWidget {
                             );
                           },
                           child: Text(
-                            'Register here',
+                            'Register manually',
                             style: TextStyle(
                               color: Colors.amber.shade800,
                               fontWeight: FontWeight.bold,

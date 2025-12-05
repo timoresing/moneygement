@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:tubes_pm_kelompok1/screens/Nav/add_cost_overlay.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../analytic.dart';
 import '../kalender.dart';
 import 'add_cost_overlay.dart';
 
@@ -22,8 +23,8 @@ class _NavbarState extends State<Navbar> {
   final List<Widget> _screens = [
     DashboardPage(),
     KalenderPage(),
+    AnalyticPage(),
     ProfilePage(),
-  //   TugasScreen(),
   ];
 
   void _onTabTapper(int index){
@@ -69,15 +70,15 @@ class _NavbarState extends State<Navbar> {
                 Row(
                   children: [
                     _buildNavItem("Home", Icons.home_outlined, 0),
-                    _buildNavItem("Calander", Icons.calendar_today, 1),
+                    _buildNavItem("Calander", Icons.calendar_today_outlined, 1),
                   ],
                 ),
 
                 // Navbar Kanan
                 Row(
                   children: [
-                    // _buildNavItem("Tugas", Icons.assignment, 2),
-                    _buildNavItem("Profile", Icons.person, 2),
+                    _buildNavItem("Analytic", Icons.analytics_outlined, 2),
+                    _buildNavItem("Profile", Icons.person_2_outlined, 3),
                   ],
                 ),
               ]
