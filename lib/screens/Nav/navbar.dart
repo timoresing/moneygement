@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:tubes_pm_kelompok1/assets/profile.dart';
-import 'package:tubes_pm_kelompok1/dashboard.dart';
+import 'package:tubes_pm_kelompok1/screens/profile.dart';
+import 'package:tubes_pm_kelompok1/screens/dashboard.dart';
+import 'package:tubes_pm_kelompok1/screens/kalender.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tubes_pm_kelompok1/screens/Nav/add_cost_overlay.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import '../analytic.dart';
+import '../kalender.dart';
+import 'add_cost_overlay.dart';
 
 class Navbar extends StatefulWidget {
   const Navbar({super.key});
@@ -16,9 +22,9 @@ class _NavbarState extends State<Navbar> {
 
   final List<Widget> _screens = [
     DashboardPage(),
+    KalenderPage(),
+    AnalyticPage(),
     ProfilePage(),
-    // JelajahiScreen(),
-  //   TugasScreen(),
   ];
 
   void _onTabTapper(int index){
@@ -34,26 +40,16 @@ class _NavbarState extends State<Navbar> {
         width: 70,
         height: 70,
         child: FloatingActionButton(
-          onPressed: () async {
-            var status = await Permission.camera.request();
-
-            if(status.isGranted){
-              ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Kamera diberi izin'))
-              );
-            }
-            else if (status.isDenied){
-              await Permission.camera.request();
-            } else if (status.isPermanentlyDenied){
-              openAppSettings();
-            }
+          onPressed: () {
+            showAddCostOverlay(context);
           },
           shape: CircleBorder(),
           backgroundColor: const Color(0xFFF1C854),
           tooltip: "Add",
           elevation: 8,
           child: Icon(
-            Icons.add,
+            Icons.add_task_sharp,
+            // Icons.add, // Boleh pilih ini juga
             size: 45,
             color: const Color(0xFF004D40),
           ),
@@ -74,15 +70,15 @@ class _NavbarState extends State<Navbar> {
                 Row(
                   children: [
                     _buildNavItem("Home", Icons.home_outlined, 0),
-                    // _buildNavItem("Jelajahi", Icons.travel_explore_outlined, 1),
+                    _buildNavItem("Calander", Icons.calendar_today_outlined, 1),
                   ],
                 ),
 
                 // Navbar Kanan
                 Row(
                   children: [
-                    // _buildNavItem("Tugas", Icons.assignment, 2),
-                    _buildNavItem("Profile", Icons.person, 1),
+                    _buildNavItem("Analytic", Icons.analytics_outlined, 2),
+                    _buildNavItem("Profile", Icons.person_2_outlined, 3),
                   ],
                 ),
               ]

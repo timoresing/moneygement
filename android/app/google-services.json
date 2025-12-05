@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "52372297376",
+    "project_id": "moneygement-c444e",
+    "storage_bucket": "moneygement-c444e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:52372297376:android:ab982dd1f8ce1165b75bc5",
+        "android_client_info": {
+          "package_name": "com.example.tubes_pm_kelompok1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "52372297376-cqq81j4510ggupq6608hflosqfkj5a4v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.tubes_pm_kelompok1",
+            "certificate_hash": "d647bacb4da0cc1f239625344c4023691482d05c"
+          }
+        },
+        {
+          "client_id": "52372297376-q1gs1chbpjt5f8gn59hi8gtmtaitc1vr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBofxNmcbV_OdbIeslHzsYo6-tE6xGBUcg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "52372297376-q1gs1chbpjt5f8gn59hi8gtmtaitc1vr.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "52372297376-fcpt31b7mv6q1a9tm7o2rgv8223f3548.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.tubesPmKelompok1"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

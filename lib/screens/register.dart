@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tubes_pm_kelompok1/assets/Nav/navbar.dart';
-import 'package:tubes_pm_kelompok1/dashboard.dart';
-import 'register.dart';
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+class RegisterPage extends StatelessWidget {
+  const RegisterPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +21,7 @@ class LoginPage extends StatelessWidget {
             child: Image.asset(
               'lib/assets/images/top-ornament.png',
               width: screen.width,
-              height: screen.height * 0.27, // 25% dari tinggi layar
+              height: screen.height * 0.27,
               fit: BoxFit.cover,
             ),
           ),
@@ -35,12 +32,12 @@ class LoginPage extends StatelessWidget {
             child: Image.asset(
               'lib/assets/images/bottom-ornament.png',
               width: screen.width,
-              height: screen.height * 0.18, // 18% dari tinggi layar
+              height: screen.height * 0.18,
               fit: BoxFit.cover,
             ),
           ),
 
-          // KONTEN LOGIN
+          // KONTEN REGISTER
           SafeArea(
             child: SingleChildScrollView(
               child: Padding(
@@ -53,16 +50,16 @@ class LoginPage extends StatelessWidget {
                     // LOGO
                     Image.asset(
                       'lib/assets/images/Logo.png',
-                      height: screen.height * 0.21,
+                      height: screen.height * 0.14,
                       fit: BoxFit.contain,
                     ),
                     const SizedBox(height: 16),
 
                     // JUDUL
                     Padding(
-                      padding: const EdgeInsets.only(top: 10, bottom: 12),
+                      padding: const EdgeInsets.only(top: 8, bottom: 12),
                       child: Text(
-                        'Login',
+                        'Register',
                         style: GoogleFonts.poppins(
                           fontSize: 40,
                           fontWeight: FontWeight.w700,
@@ -72,12 +69,34 @@ class LoginPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
 
+                    // USERNAME FIELD
+                    TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Username',
+                        hintText: 'johndoe123',
+                        hintStyle: TextStyle(
+                          color: Colors.black.withOpacity(0.4),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        prefixIcon: const Icon(Icons.person_outline),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
                     // EMAIL FIELD
                     TextField(
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         labelText: 'Email',
                         hintText: 'johndoe@gmail.com',
+                        hintStyle: TextStyle(
+                          color: Colors.black.withOpacity(0.4),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                         prefixIcon: const Icon(Icons.email_outlined),
@@ -95,6 +114,29 @@ class LoginPage extends StatelessWidget {
                       decoration: InputDecoration(
                         labelText: 'Password',
                         hintText: 'Your Password',
+                        hintStyle: TextStyle(
+                          color: Colors.black.withOpacity(0.4),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // CONFIRM PASSWORD FIELD
+                    TextField(
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: 'Confirm Password',
+                        hintText: 'Re-enter your password',
+                        hintStyle: TextStyle(
+                          color: Colors.black.withOpacity(0.4),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                         prefixIcon: const Icon(Icons.lock_outline),
@@ -106,14 +148,15 @@ class LoginPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 30),
 
-                    // LOGIN BUTTON
+                    // REGISTER BUTTON
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => Navbar()),
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Register pressed'),
+                            ),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -124,7 +167,7 @@ class LoginPage extends StatelessWidget {
                           ),
                         ),
                         child: const Text(
-                          'Login',
+                          'Register',
                           style: TextStyle(
                             fontSize: 21,
                             color: Colors.white,
@@ -132,34 +175,19 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 10),
 
-                    // FORGOT PASSWORD
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text(
-                        'Forgot password?',
-                        style: TextStyle(
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-
-                    // REGISTER LINK
+                    // LOGIN LINK
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Don't have an account? "),
+                        const Text("Already have an account? "),
                         GestureDetector(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const RegisterPage()),
-                            );
+                            Navigator.pop(context);
                           },
                           child: Text(
-                            'Register here',
+                            'Login here',
                             style: TextStyle(
                               color: Colors.amber.shade800,
                               fontWeight: FontWeight.bold,
