@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen>
     Timer(const Duration(seconds: 3), () {
       Navigator.of(context).pushReplacement(PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 900),
-        pageBuilder: (_, __, ___) => const LoginPage(),
+        pageBuilder: (_, __, ___) => const LoginScreen(),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(opacity: animation, child: child);
         },

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'register.dart';
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+class LoginScreen extends StatelessWidget {
+  const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +51,7 @@ class LoginPage extends StatelessWidget {
                     // LOGO
                     Image.asset(
                       'lib/assets/images/Logo.png',
-                      height: screen.height * 0.21,
+                      height: screen.height * 0.15,
                       fit: BoxFit.contain,
                     ),
                     const SizedBox(height: 16),
@@ -60,9 +60,9 @@ class LoginPage extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 10, bottom: 12),
                       child: Text(
-                        'Login',
+                        'Welcome Back',
                         style: GoogleFonts.poppins(
-                          fontSize: 40,
+                          fontSize: screen.height * 0.03,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFFC86623),
                         ),
@@ -100,7 +100,10 @@ class LoginPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
-                      ),
+                        suffixIcon: IconButton(
+                            onPressed: () {},
+                            icon: const Icon(Icons.visibility_off_outlined))
+                      )
                     ),
                     const SizedBox(height: 30),
 
@@ -154,7 +157,7 @@ class LoginPage extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const RegisterPage()),
+                              MaterialPageRoute(builder: (context) => const RegisterScreen()),
                             );
                           },
                           child: Text(
