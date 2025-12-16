@@ -60,32 +60,6 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: const Color(0xFFF3EEDF),
       body: Stack(
         children: [
-          // ORNAMENT ATAS
-          Positioned(
-            top: -50,
-            left: 0,
-            right: 0,
-            child: Image.asset(
-              'lib/assets/images/top-ornament.png',
-              width: screen.width,
-              height: screen.height * 0.35,
-              fit: BoxFit.cover,
-            ),
-          ),
-
-          // ORNAMENT BAWAH
-          Positioned(
-            bottom: -50,
-            left: 0,
-            right: 0,
-            child: Image.asset(
-              'lib/assets/images/bottom-ornament.png',
-              width: screen.width,
-              height: screen.height * 0.25,
-              fit: BoxFit.cover,
-            ),
-          ),
-
           // LOGO DAN TEKS
           Center(
             child: FadeTransition(
@@ -95,7 +69,7 @@ class _SplashScreenState extends State<SplashScreen>
                 children: [
                   Image.asset(
                     'lib/assets/images/Logo.png',
-                    width: screen.width * 0.6,
+                    width: screen.width * 0.5,
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 20),

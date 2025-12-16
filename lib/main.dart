@@ -1,11 +1,10 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:tubes_pm_kelompok1/screens/Nav/navbar.dart';
 import 'package:tubes_pm_kelompok1/screens/splash.dart';
-import '../firebase_options.dart';
-import 'login.dart';
-import 'dashboard.dart';
+import 'firebase_options.dart';
+import 'screens/login.dart';
+import 'screens/dashboard.dart';
 
 // ini tubes kelompok 1
 Future<void> main() async {

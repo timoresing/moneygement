@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:tubes_pm_kelompok1/screens/profile.dart';
 import 'package:tubes_pm_kelompok1/screens/dashboard.dart';
 import 'package:tubes_pm_kelompok1/screens/kalender.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:tubes_pm_kelompok1/screens/Nav/add_cost_overlay.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -20,13 +19,6 @@ class Navbar extends StatefulWidget {
 class _NavbarState extends State<Navbar> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    DashboardPage(),
-    KalenderPage(),
-    AnalyticPage(),
-    ProfilePage(),
-  ];
-
   void _onTabTapper(int index){
     setState(() {
       _selectedIndex = index;
@@ -35,6 +27,18 @@ class _NavbarState extends State<Navbar> {
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> _screens = [
+      DashboardPage(
+        onProfileTap: () {
+          setState(() {
+            _selectedIndex = 3;
+          });
+        },
+      ),
+      KalenderPage(onBack: () => setState(() => _selectedIndex = 0)),
+      AnalyticPage(onBack: () => setState(() => _selectedIndex = 0)),
+      ProfilePage(),
+    ];
     return Scaffold(
       floatingActionButton: SizedBox(
         width: 70,
@@ -48,8 +52,7 @@ class _NavbarState extends State<Navbar> {
           tooltip: "Add",
           elevation: 8,
           child: Icon(
-            Icons.add_task_sharp,
-            // Icons.add, // Boleh pilih ini juga
+            Icons.post_add,
             size: 45,
             color: const Color(0xFF004D40),
           ),

@@ -1,10 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   // 1. Membuat objek _auth untuk mengakses layanan autentikasi Firebase
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   // 2. Membuat objek _googleSignIn untuk berinteraksi ke server Google
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
@@ -34,16 +35,70 @@ class AuthService {
       final UserCredential userCredential = await _auth.signInWithCredential(credential);
 
       // Jika sukses sampai sini, kembalikan data User (nama, email, foto, uid) ke pemanggil fungsi.
-      return userCredential.user;
+      User? user = userCredential.user;
 
-    } on FirebaseAuthException catch (e) {
-      // Menangkap error spesifik dari Firebase (Contoh: Koneksi internet putus, atau konfigurasi SHA-1 salah).
-      print("Firebase Auth Error: ${e.message}");
-      return null; // Kembalikan null karena login gagal.
+      if (user != null) {
+        // === TAMBAHAN LOGIKA FIRESTORE DI SINI ===
+
+        // 1. Cek apakah user ini sudah ada di database?
+        DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
+
+        // 2. Jika data TIDAK ADA (!exists), berarti dia user baru login pertama kali
+        if (!userDoc.exists) {
+          // 3. Buat data awal (Income 0, Expense 0)
+          await _firestore.collection('users').doc(user.uid).set({
+            'uid': user.uid,
+            'email': user.email,
+            'displayName': user.displayName,
+            'photoURL': user.photoURL,
+            'income': 0,    // <-- Set Income 0
+            'expense': 0,   // <-- Set Cost/Expense 0
+            'balance': 0,   // <-- Total Balance (Income - Expense)
+            'createdAt': FieldValue.serverTimestamp(), // Catat waktu pembuatan
+          });
+
+          print("User baru dibuatkan database di Firestore!");
+        } else {
+          print("User lama login, data aman.");
+        }
+        // =========================================
+      }
+
+      return user;
     } catch (e) {
-      // Menangkap error umum, termasuk jika menekan tombol 'Back' atau batal memilih akun.
-      print("Google Sign-In Error / Cancelled: $e");
-      return null; // Kembalikan null karena login gagal.
+      print("Error Login: $e");
+      return null;
+    }
+  }
+
+  Future<User?> signUpWithEmail({
+    required String email,
+    required String password,
+    required String name // <--- Kita minta input Nama saat Register
+  }) async {
+    try {
+      // 1. Buat User baru di Firebase Auth
+      UserCredential result = await _auth.createUserWithEmailAndPassword(
+          email: email,
+          password: password
+      );
+
+      User? user = result.user;
+
+      // 2. UPDATE PROFILE (Ini kuncinya!)
+      // Supaya 'displayName' di Drawer nanti tidak null
+      if (user != null) {
+        await user.updateDisplayName(name);
+        // await user.updatePhotoURL("https://link_foto_default.com/avatar.png"); // Opsional
+
+        await user.reload(); // Refresh data user agar update terbaca
+        user = _auth.currentUser; // Ambil user yang sudah ter-update
+      }
+
+      return user;
+    } catch (e) {
+      print("Error Register: $e");
+      return null;
     }
   }
 

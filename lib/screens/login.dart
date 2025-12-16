@@ -83,7 +83,7 @@ class LoginPage extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 10, bottom: 12),
                       child: Text(
                         'Login',
-                        style: GoogleFonts.poppins(
+                        style: TextStyle(
                           fontSize: 40,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFFC86623),
@@ -136,12 +136,7 @@ class LoginPage extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => Navbar()),
-                          );
-                        },
+                        onPressed: () {},
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFCE9B00),
                           padding: const EdgeInsets.symmetric(vertical: 15),
