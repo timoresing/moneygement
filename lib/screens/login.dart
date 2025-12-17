@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tubes_pm_kelompok1/screens/Nav/navbar.dart';
-// import 'package:tubes_pm_kelompok1/screens/dashboard.dart'; // Sesuaikan import dashboard kamu
 import 'register.dart';
 import 'package:tubes_pm_kelompok1/service/auth_service.dart';
 
@@ -13,7 +12,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // Controller untuk mengambil teks input
+  // Controllers
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
@@ -39,11 +38,11 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = false);
 
     if (user != null) {
-      // Pindah ke Dashboard/Navbar
+      // Pindah ke Dashboard
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const Navbar()), // Ganti Navbar() atau DashboardPage()
+          MaterialPageRoute(builder: (context) => const Navbar()),
         );
       }
     } else {
@@ -112,7 +111,7 @@ class _LoginPageState extends State<LoginPage> {
 
                     // EMAIL FIELD
                     TextField(
-                      controller: _emailController, // Tambahkan Controller
+                      controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         labelText: 'Email',
@@ -128,7 +127,7 @@ class _LoginPageState extends State<LoginPage> {
 
                     // PASSWORD FIELD
                     TextField(
-                      controller: _passwordController, // Tambahkan Controller
+                      controller: _passwordController,
                       obscureText: true,
                       decoration: InputDecoration(
                         labelText: 'Password',
@@ -146,7 +145,7 @@ class _LoginPageState extends State<LoginPage> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleEmailLogin, // Panggil Fungsi
+                        onPressed: _isLoading ? null : _handleEmailLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFCE9B00),
                           padding: const EdgeInsets.symmetric(vertical: 15),

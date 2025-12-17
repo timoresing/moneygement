@@ -28,22 +28,21 @@ class _RegisterPageState extends State<RegisterPage> {
     String password = _passwordController.text.trim();
     String confirmPass = _confirmPassController.text.trim();
 
-    // 1. Validasi Input Dasar
+    // Validasi Input Dasar
     if (email.isEmpty || password.isEmpty || confirmPass.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please fill all fields")));
       setState(() => _isLoading = false);
       return;
     }
 
-    // 2. Validasi Password Match
+    // Validasi Password Match
     if (password != confirmPass) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
       setState(() => _isLoading = false);
       return;
     }
 
-    // 3. Panggil Auth Service
-    // Jika name kosong, nanti di AuthService akan otomatis diubah jadi "User"
+    // Panggil Auth Service
     final user = await _authService.signUpWithEmail(
         email: email,
         password: password,
@@ -53,12 +52,12 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() => _isLoading = false);
 
     if (user != null) {
-      // Registrasi Berhasil -> Langsung Masuk Dashboard
+      // Registrasi Berhasil Maka Masuk Dashboard
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const Navbar()), // Masuk ke Navbar
-              (route) => false, // Hapus history back ke login
+          MaterialPageRoute(builder: (context) => const Navbar()),
+              (route) => false,
         );
       }
     } else {
@@ -106,7 +105,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                     // USERNAME FIELD
                     TextField(
-                      controller: _nameController, // Controller Nama
+                      controller: _nameController,
                       decoration: InputDecoration(
                         labelText: 'Username',
                         hintText: 'johndoe123',
@@ -121,7 +120,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                     // EMAIL FIELD
                     TextField(
-                      controller: _emailController, // Controller Email
+                      controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         labelText: 'Email',
@@ -137,7 +136,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                     // PASSWORD FIELD
                     TextField(
-                      controller: _passwordController, // Controller Pass
+                      controller: _passwordController,
                       obscureText: true,
                       decoration: InputDecoration(
                         labelText: 'Password',
@@ -153,7 +152,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                     // CONFIRM PASSWORD FIELD
                     TextField(
-                      controller: _confirmPassController, // Controller Confirm Pass
+                      controller: _confirmPassController,
                       obscureText: true,
                       decoration: InputDecoration(
                         labelText: 'Confirm Password',
@@ -171,7 +170,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _handleRegister, // Panggil Fungsi
+                        onPressed: _isLoading ? null : _handleRegister,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFCE9B00),
                           padding: const EdgeInsets.symmetric(vertical: 15),

@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'Nav/auth_wrapper.dart';
-import 'login.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -30,7 +28,7 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // Animasi logo fade-in
+    // Animasi logo
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -60,7 +58,6 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: const Color(0xFFF3EEDF),
       body: Stack(
         children: [
-          // LOGO DAN TEKS
           Center(
             child: FadeTransition(
               opacity: _fadeInAnimation,
