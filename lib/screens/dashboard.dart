@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // <--- 1. WAJIB IMPORT INI
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../service/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -16,12 +18,184 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final User? user = FirebaseAuth.instance.currentUser;
 
-  // --- 1. STATE UNTUK SEARCH & FILTER ---
+  // State Search & Filter
   String _searchQuery = "";
-  String _selectedFilter = "All"; // Pilihan: 'All', 'Income', 'Expense'
+  String _selectedFilter = "All";
 
   String formatRupiah(num number) {
     return "Rp${number.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}";
+  }
+
+  String _formatDateFull(DateTime date) {
+    return DateFormat('d MMMM yyyy').format(date);
+  }
+
+  String _formatTime(DateTime date) {
+    return DateFormat('HH:mm').format(date);
+  }
+
+  Future<void> _deleteTransaction(String transId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .collection('transactions')
+          .doc(transId)
+          .delete();
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Transaction deleted successfully"),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print("Error deleting: $e");
+    }
+  }
+
+  void _showDetailDialog(String id, String title, int amount, String type, DateTime date, String? description) {
+    bool isIncome = type == 'income';
+    Color typeColor = isIncome ? const Color(0xFF43A047) : const Color(0xFFE53935);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          elevation: 5,
+          backgroundColor: Colors.white,
+          child: Stack(
+            children: [
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.grey),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: typeColor.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                        color: typeColor,
+                        size: 40,
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF004D40),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      "${_formatDateFull(date)} • ${_formatTime(date)}",
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      formatRupiah(amount),
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: typeColor,
+                      ),
+                    ),
+                    if (description != null && description.isNotEmpty) ...[
+                      const SizedBox(height: 15),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          description,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey[700]),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 30),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Edit feature coming soon!")),
+                              );
+                            },
+                            icon: const Icon(Icons.edit, size: 18, color: Colors.white),
+                            label: const Text("Edit", style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFF1C854),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                  context: context,
+                                  builder: (c) => AlertDialog(
+                                    title: const Text("Delete Transaction?"),
+                                    content: const Text("This action cannot be undone."),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(c), child: const Text("Cancel")),
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(c);
+                                            _deleteTransaction(id);
+                                          },
+                                          child: const Text("Delete", style: TextStyle(color: Colors.red))
+                                      ),
+                                    ],
+                                  )
+                              );
+                            },
+                            icon: const Icon(Icons.delete, size: 18, color: Colors.white),
+                            label: const Text("Delete", style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFE53935),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void showAddBalanceDialog() {
@@ -70,15 +244,24 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                     ),
                     const SizedBox(height: 15),
+
+                    // --- INPUT AMOUNT DI SINI ---
                     TextField(
                       controller: amountController,
                       keyboardType: TextInputType.number,
+                      // 2. TAMBAHAN PENTING: HANYA BOLEH ANGKA
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
                       decoration: InputDecoration(
                         labelText: "Enter amount",
+                        hintText: "e.g. 100000",
+                        hintStyle: TextStyle(color: Colors.black.withOpacity(0.4)),
                         prefixIcon: const Icon(Icons.money, color: Color(0xFF004D40)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
+
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -91,6 +274,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40)),
                           onPressed: () async {
+                            // Cleaning juga tetap ada untuk jaga-jaga
                             String cleanValue = amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
                             int? amount = int.tryParse(cleanValue);
                             String title = titleController.text.trim();
@@ -226,13 +410,12 @@ class _DashboardPageState extends State<DashboardPage> {
 
             return Column(
               children: [
-                // 1. FIXED TOP AREA
+                // FIXED TOP AREA
                 Container(
                   color: backgroundColor,
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   child: Column(
                     children: [
-                      // Balance Card
                       Row(
                         children: [
                           Expanded(
@@ -284,8 +467,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   child: Container(
                     width: double.infinity,
                     decoration: const BoxDecoration(
-                        color: Color(0xFFEFEBDD),
-                        borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+                      color: Color(0xFFEFEBDD),
+                      borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,7 +481,6 @@ class _DashboardPageState extends State<DashboardPage> {
                               Text("Recently activity", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFFC86623), fontSize: 20)),
                               const SizedBox(height: 25),
 
-                              // --- FILTER CHIPS AKTIF ---
                               SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: Row(
@@ -308,7 +490,6 @@ class _DashboardPageState extends State<DashboardPage> {
                                     Text("Filter:", style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
                                     const SizedBox(width: 10),
 
-                                    // Pilihan Filter: All, Income, Expense
                                     _buildFilterChip("All"),
                                     const SizedBox(width: 6),
                                     _buildFilterChip("Income"),
@@ -321,7 +502,6 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         ),
 
-                        // --- LIST DATA DENGAN LOGIKA FILTER ---
                         Expanded(
                           child: StreamBuilder<QuerySnapshot>(
                             stream: FirebaseFirestore.instance
@@ -336,26 +516,18 @@ class _DashboardPageState extends State<DashboardPage> {
                               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return _buildEmptyState();
                               var docs = snapshot.data!.docs;
 
-                              // 2. LAKUKAN FILTERING DI SINI (CLIENT SIDE)
                               var filteredDocs = docs.where((doc) {
                                 var data = doc.data() as Map<String, dynamic>;
                                 String title = data['title'].toString().toLowerCase();
                                 String type = data['type'].toString().toLowerCase();
-
-                                // Filter A: Search Text
                                 bool matchesSearch = title.contains(_searchQuery);
-
-                                // Filter B: Chips Category
                                 bool matchesFilter = true;
                                 if (_selectedFilter != "All") {
-                                  // Kalau pilih Income, data harus income. Kalau Expense, harus expense.
                                   matchesFilter = type == _selectedFilter.toLowerCase();
                                 }
-
                                 return matchesSearch && matchesFilter;
                               }).toList();
 
-                              // 3. JIKA HASIL FILTER KOSONG
                               if (filteredDocs.isEmpty) {
                                 return Center(
                                   child: Text("Not found anything", style: GoogleFonts.poppins(color: Colors.grey)),
@@ -368,13 +540,14 @@ class _DashboardPageState extends State<DashboardPage> {
                                 itemBuilder: (context, index) {
                                   var doc = filteredDocs[index];
                                   var data = doc.data() as Map<String, dynamic>;
-
+                                  String id = doc.id;
                                   String title = data['title'] ?? 'Tanpa Judul';
                                   int amount = data['amount'] ?? 0;
                                   String type = data['type'] ?? 'expense';
-                                  Color color = (type == 'income') ? Colors.green : Colors.red;
+                                  DateTime date = (data['date'] as Timestamp).toDate();
+                                  String? description = data['description'];
 
-                                  return _activityItem(title, formatRupiah(amount), color);
+                                  return _activityItem(id, title, amount, type, date, description);
                                 },
                               );
                             },
@@ -392,8 +565,6 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // --- WIDGET HELPERS ---
-
-  // Widget Filter Chip yang bisa diklik
   Widget _buildFilterChip(String label) {
     bool isSelected = _selectedFilter == label;
     return GestureDetector(
@@ -470,27 +641,34 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _activityItem(String title, String value, Color color) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(1, 2))],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Icon(color == Colors.red ? Icons.arrow_downward : Icons.arrow_upward, color: color),
-              const SizedBox(width: 8),
-              Text(title, style: GoogleFonts.poppins(fontSize: 14)),
-            ],
-          ),
-          Text(value, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
-        ],
+  Widget _activityItem(String id, String title, int amount, String type, DateTime date, String? description) {
+    Color color = (type == 'income') ? Colors.green : Colors.red;
+    return InkWell(
+      onTap: () {
+        _showDetailDialog(id, title, amount, type, date, description);
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(1, 2))],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(color == Colors.red ? Icons.arrow_downward : Icons.arrow_upward, color: color),
+                const SizedBox(width: 8),
+                Text(title, style: GoogleFonts.poppins(fontSize: 14)),
+              ],
+            ),
+            Text(formatRupiah(amount), style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+          ],
+        ),
       ),
     );
   }
