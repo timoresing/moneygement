@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "52372297376-ngbjs3h3lmgc6rkarp4c9ug9o5nblatu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.tubes_pm_kelompok1",
+            "certificate_hash": "2841efeb25705840601f3050a5c9f706913973ce"
+          }
+        },
+        {
           "client_id": "52372297376-q1gs1chbpjt5f8gn59hi8gtmtaitc1vr.apps.googleusercontent.com",
           "client_type": 3
         }
