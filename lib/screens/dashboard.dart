@@ -245,14 +245,16 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                     const SizedBox(height: 15),
 
+                    // --- INPUT AMOUNT DI SINI ---
                     TextField(
                       controller: amountController,
                       keyboardType: TextInputType.number,
+                      // 2. TAMBAHAN PENTING: HANYA BOLEH ANGKA
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
                       ],
                       decoration: InputDecoration(
-                        labelText: "Enter Amount",
+                        labelText: "Enter amount",
                         hintText: "e.g. 100000",
                         hintStyle: TextStyle(color: Colors.black.withOpacity(0.4)),
                         prefixIcon: const Icon(Icons.money, color: Color(0xFF004D40)),
@@ -272,6 +274,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40)),
                           onPressed: () async {
+                            // Cleaning juga tetap ada untuk jaga-jaga
                             String cleanValue = amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
                             int? amount = int.tryParse(cleanValue);
                             String title = titleController.text.trim();
@@ -296,7 +299,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   Navigator.pop(context);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text("Successfully added balance!"),
+                                      content: Text("Balance added successfully!"),
                                       backgroundColor: Colors.green,
                                       behavior: SnackBarBehavior.floating,
                                       margin: EdgeInsets.all(20),
@@ -406,6 +409,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
             return Column(
               children: [
+                // FIXED TOP AREA
                 Container(
                   color: backgroundColor,
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -473,7 +477,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Recent Activity", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Color(0xFFC86623), fontSize: 20)),
+                              Text("Recent Activity", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFFC86623), fontSize: 20)),
                               const SizedBox(height: 25),
 
                               SingleChildScrollView(
@@ -525,7 +529,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                               if (filteredDocs.isEmpty) {
                                 return Center(
-                                  child: Text("No transactions found", style: GoogleFonts.poppins(color: Colors.grey)),
+                                  child: Text("No results found", style: GoogleFonts.poppins(color: Colors.grey)),
                                 );
                               }
 
@@ -559,6 +563,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  // --- WIDGET HELPERS ---
   Widget _buildFilterChip(String label) {
     bool isSelected = _selectedFilter == label;
     return GestureDetector(

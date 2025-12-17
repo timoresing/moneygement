@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 
-// 1. UPDATE MODEL: Added 'id'
+// 1. UPDATE MODEL: Tambahkan 'id'
 class TransactionDetail {
-  final String id; // Firestore Document ID
+  final String id;
   final String title;
   final int amount;
   final String type;
   final DateTime date;
-  final String? description; // Optional additional detail
+  final String? description;
 
   TransactionDetail({
     required this.id,
@@ -22,7 +22,6 @@ class TransactionDetail {
     this.description,
   });
 
-  // Factory modified to accept DocumentSnapshot to retrieve ID
   factory TransactionDetail.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return TransactionDetail(
@@ -92,7 +91,7 @@ class _KalenderPageState extends State<KalenderPage> {
     }
   }
 
-  // 2. DELETE FUNCTION
+  // 2. FUNGSI DELETE
   Future<void> _deleteTransaction(String transId) async {
     try {
       await FirebaseFirestore.instance
@@ -104,7 +103,7 @@ class _KalenderPageState extends State<KalenderPage> {
 
       _fetchEvents();
       if (mounted) {
-        Navigator.pop(context); // Close Dialog
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Transaction deleted successfully"),
@@ -120,7 +119,7 @@ class _KalenderPageState extends State<KalenderPage> {
     }
   }
 
-  // 3. DETAIL POP-UP (DIALOG)
+  // 3. FUNGSI POP-UP DETAIL (DIALOG)
   void _showDetailDialog(TransactionDetail trx) {
     bool isIncome = trx.type == 'income';
     Color typeColor = isIncome ? const Color(0xFF43A047) : const Color(0xFFE53935);
@@ -134,6 +133,7 @@ class _KalenderPageState extends State<KalenderPage> {
           backgroundColor: Colors.white,
           child: Stack(
             children: [
+              // TOMBOL CLOSE
               Positioned(
                 top: 8,
                 right: 8,
@@ -142,6 +142,8 @@ class _KalenderPageState extends State<KalenderPage> {
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
+
+              // KONTEN UTAMA
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
                 child: Column(
@@ -160,6 +162,7 @@ class _KalenderPageState extends State<KalenderPage> {
                       ),
                     ),
                     const SizedBox(height: 15),
+
                     Text(
                       trx.title,
                       textAlign: TextAlign.center,
@@ -170,11 +173,13 @@ class _KalenderPageState extends State<KalenderPage> {
                       ),
                     ),
                     const SizedBox(height: 5),
+
                     Text(
                       "${_formatDateFull(trx.date)} • ${_formatTime(trx.date)}",
                       style: TextStyle(color: Colors.grey[600], fontSize: 13),
                     ),
                     const SizedBox(height: 20),
+
                     Text(
                       _formatCurrency(trx.amount),
                       style: TextStyle(
@@ -183,6 +188,7 @@ class _KalenderPageState extends State<KalenderPage> {
                         color: typeColor,
                       ),
                     ),
+
                     if (trx.description != null && trx.description!.isNotEmpty) ...[
                       const SizedBox(height: 15),
                       Container(
@@ -198,7 +204,9 @@ class _KalenderPageState extends State<KalenderPage> {
                         ),
                       ),
                     ],
+
                     const SizedBox(height: 30),
+
                     Row(
                       children: [
                         Expanded(
@@ -270,12 +278,14 @@ class _KalenderPageState extends State<KalenderPage> {
     return "Rp${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}";
   }
 
+  // FORCE English Locale ('en_US') agar outputnya "08:30" bukan format lokal lain
   String _formatTime(DateTime date) {
-    return DateFormat('HH:mm').format(date);
+    return DateFormat('HH:mm', 'en_US').format(date);
   }
 
+  // FORCE English Locale agar nama bulan jadi "December" bukan "Desember"
   String _formatDateFull(DateTime date) {
-    return DateFormat('d MMMM yyyy').format(date);
+    return DateFormat('d MMMM yyyy', 'en_US').format(date);
   }
 
   String _getMonthName(int month) {
@@ -384,6 +394,8 @@ class _KalenderPageState extends State<KalenderPage> {
               ],
             ),
             child: TableCalendar(
+              // Force English Locale di Kalender (biar hari & bulan jadi Mon/Tue & Jan/Feb)
+              locale: 'en_US',
               firstDay: DateTime.utc(2020, 1, 1),
               lastDay: DateTime.utc(2030, 1, 1),
               focusedDay: _focusedDay,
@@ -417,6 +429,7 @@ class _KalenderPageState extends State<KalenderPage> {
             ),
           ),
           const SizedBox(height: 10),
+
           Expanded(
             child: Builder(
               builder: (context) {
@@ -451,6 +464,7 @@ class _KalenderPageState extends State<KalenderPage> {
                         ],
                       ),
                       const Divider(height: 20),
+
                       Expanded(
                         child: selectedEvents.isEmpty
                             ? Center(
@@ -490,8 +504,9 @@ class _KalenderPageState extends State<KalenderPage> {
     Color bgColor = isIncome ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE);
     IconData icon = isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
 
+    // BUNGKUS DENGAN INKWELL AGAR BISA DIKLIK
     return InkWell(
-      onTap: () => _showDetailDialog(trx),
+      onTap: () => _showDetailDialog(trx), // Munculkan Dialog saat diklik
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

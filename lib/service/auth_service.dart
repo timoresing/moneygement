@@ -69,13 +69,36 @@ class AuthService {
     }
   }
 
+  Future<User?> signInWithEmail(String email, String password) async {
+    try {
+      // Login ke Firebase Auth
+      UserCredential result = await _auth.signInWithEmailAndPassword(
+          email: email,
+          password: password
+      );
+
+      User? user = result.user;
+
+      // Kita tidak perlu cek/buat Firestore di sini karena asumsinya
+      // data sudah dibuat saat Register.
+
+      return user;
+    } catch (e) {
+      print("Error Login Email: $e");
+      return null;
+    }
+  }
+
+  // ==========================================================
+  // 2. REGISTER MANUAL (EMAIL & PASSWORD)
+  // ==========================================================
   Future<User?> signUpWithEmail({
     required String email,
     required String password,
-    required String name // <--- Kita minta input Nama saat Register
+    required String name // Username dari input
   }) async {
     try {
-      // 1. Buat User baru di Firebase Auth
+      // A. Buat Akun di Firebase Auth
       UserCredential result = await _auth.createUserWithEmailAndPassword(
           email: email,
           password: password
@@ -83,16 +106,27 @@ class AuthService {
 
       User? user = result.user;
 
-      // 2. UPDATE PROFILE (Ini kuncinya!)
-      // Supaya 'displayName' di Drawer nanti tidak null
       if (user != null) {
-        await user.updateDisplayName(name);
-        // await user.updatePhotoURL("https://link_foto_default.com/avatar.png"); // Opsional
+        // B. Update Display Name di Auth (Penting!)
+        // Jika nama kosong, kita set default jadi "User"
+        String finalName = name.isEmpty ? "User" : name;
+        await user.updateDisplayName(finalName);
+        await user.reload();
+        user = _auth.currentUser;
 
-        await user.reload(); // Refresh data user agar update terbaca
-        user = _auth.currentUser; // Ambil user yang sudah ter-update
+        // C. Buat Data di Firestore (SAMAKAN STRUKTURNYA DENGAN GOOGLE)
+        // Perhatikan: Kita TIDAK menyimpan password di sini.
+        await _firestore.collection('users').doc(user!.uid).set({
+          'uid': user.uid,
+          'email': user.email,
+          'displayName': finalName, // Nama dari input register
+          'photoURL': null, // User manual biasanya gak punya foto awal
+          'income': 0,
+          'expense': 0,
+          'balance': 0,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
       }
-
       return user;
     } catch (e) {
       print("Error Register: $e");

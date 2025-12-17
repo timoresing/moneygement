@@ -14,7 +14,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 final User? user = FirebaseAuth.instance.currentUser;
-final String displayName = user?.displayName ?? "Pengguna";
+final String displayName = user?.displayName ?? "User";
 final String email = user?.email ?? "";
 final String? photoUrl = user?.photoURL;
 
