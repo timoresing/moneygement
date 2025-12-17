@@ -91,7 +91,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
                         const SizedBox(height: 12),
 
-                        // TEKS SAPAAN
                         Text(
                           "Hi, Good ${getGreeting()}",
                           style: GoogleFonts.poppins(

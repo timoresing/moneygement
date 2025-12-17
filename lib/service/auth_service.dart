@@ -56,14 +56,12 @@ class AuthService {
             'balance': 0,   // <-- Total Balance (Income - Expense)
             'createdAt': FieldValue.serverTimestamp(), // Catat waktu pembuatan
           });
-
           print("User baru dibuatkan database di Firestore!");
         } else {
           print("User lama login, data aman.");
         }
         // =========================================
       }
-
       return user;
     } catch (e) {
       print("Error Login: $e");
