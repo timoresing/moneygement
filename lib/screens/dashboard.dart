@@ -391,7 +391,6 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
 
-      // --- BODY UTAMA ---
       body: StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
           builder: (context, snapshot) {

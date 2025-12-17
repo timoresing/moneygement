@@ -2,6 +2,7 @@
 
 ## Info
 Nama aplikasi: Moneygement
+
 Tim Pengembang: Kelompok 1
 
 - Timothy Manuel Chandra - 231402062
