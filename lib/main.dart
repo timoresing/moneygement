@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
           fontFamily: 'Poppins',
           scaffoldBackgroundColor: const Color(0xFFF3EEDF),
       ),
-      home: const SplashScreen(),
+      home: const Navbar(),
     );
   }
 }
