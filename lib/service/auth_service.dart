@@ -75,6 +75,9 @@ class AuthService {
       );
 
       User? user = result.user;
+      if (user != null) {
+        await _checkAndCreateUserInFirestore(user);
+      }
       return user;
     } catch (e) {
       print("Error Login Email: $e");
@@ -123,11 +126,40 @@ class AuthService {
     }
   }
 
+  Future<void> _checkAndCreateUserInFirestore(User user) async {
+    DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
+    if (!userDoc.exists) {
+      await _firestore.collection('users').doc(user.uid).set({
+        'uid': user.uid,
+        'email': user.email,
+        'displayName': user.displayName ?? "User",
+        'photoURL': user.photoURL,
+        'income': 0,
+        'expense': 0,
+        'balance': 0,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      print("User database created in Firestore!");
+    } else {
+      print("User exists in Firestore, data is safe.");
+    }
+  }
+
   // Fungsi untuk Logout (Keluar Akun)
   Future<void> signOut() async {
-    // Memutuskan koneksi dengan Google agar saat login lagi, bisa memilih akun berbeda.
-    await _googleSignIn.disconnect();
-    // Menghapus sesi login dari Firebase Auth di aplikasi.
-    await _auth.signOut();
+
+    // Mengecek apakah log in menggunakan akun Google atau bukan
+    try {
+      final user = _auth.currentUser;
+      if (_auth.currentUser?.providerData.first.providerId == 'google.com') {
+        // Memutuskan koneksi dengan Google agar saat login lagi, bisa memilih akun berbeda.
+        await _googleSignIn.signOut();
+      }
+    } catch (e) {
+      print("Error Google Sign Out: $e");
+    } finally {
+      // Menghapus sesi login dari Firebase Auth di aplikasi.
+      await _auth.signOut();
+    }
   }
 }

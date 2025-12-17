@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../service/auth_service.dart';
 
@@ -19,8 +20,15 @@ class _ProfilePageState extends State<ProfilePage> {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null && _nameController.text.isNotEmpty) {
       try {
-        await user.updateDisplayName(_nameController.text.trim());
+        String newName = _nameController.text.trim();
+
+        await user.updateDisplayName(newName);
         await user.reload();
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({'displayName': newName});
+
         setState(() {});
 
         if (mounted) {
@@ -72,6 +80,37 @@ class _ProfilePageState extends State<ProfilePage> {
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40)),
               onPressed: _updateDisplayName,
               child: const Text("Save", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Fungsi untuk menampilkan dialog konfirmasi logout
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Confirm Log Out"),
+          content: const Text("Are you sure you want to log out?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
+              onPressed: () async {
+                if (mounted) {
+                  Navigator.pop(context);
+                }
+                AuthService().signOut();
+              },
+              child: const Text("Log Out", style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -146,12 +185,19 @@ class _ProfilePageState extends State<ProfilePage> {
                     ],
                   ),
                 ),
-                ListTile(leading: const Icon(Icons.home), title: const Text('Dashboard'), onTap: () => Navigator.pop(context)),
-                ListTile(leading: const Icon(Icons.person), title: const Text('Profile'), onTap: () {
+                ListTile(leading: const Icon(Icons.home),
+                    title: const Text('Dashboard'),
+                    onTap: () => Navigator.pop(context)),
+                ListTile(leading: const Icon(Icons.person),
+                    title: const Text('Profile'),
+                    onTap: () {
                   Navigator.pop(context);
                   if (widget.onProfileTap != null) widget.onProfileTap!();
                 }),
-                ListTile(leading: const Icon(Icons.logout), title: const Text('Logout'), onTap: () async => await AuthService().signOut()),
+                ListTile(leading: const Icon(Icons.logout),
+                    title: const Text('Log Out'),
+                    onTap: _showLogoutConfirmationDialog
+                ),
               ],
             ),
           ),
@@ -251,7 +297,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 30),
 
                   GestureDetector(
-                    onTap: () async => await AuthService().signOut(),
+                    onTap: _showLogoutConfirmationDialog,
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 15),
@@ -261,7 +307,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         border: Border.all(color: Colors.red.shade100),
                       ),
                       child: const Center(
-                        child: Text("Log Out", style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
+                        child: Text("Log Out",
+                            style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.w600)),
                       ),
                     ),
                   ),
