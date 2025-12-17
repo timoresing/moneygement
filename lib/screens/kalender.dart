@@ -1,54 +1,329 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:intl/intl.dart'; // Tambahkan intl di pubspec.yaml jika mau format uang otomatis, tapi saya pakai manual di bawah.
+import 'package:intl/intl.dart';
 
-// 1. Model Data
-class TransactionSummary {
-  final int income;
-  final int expense;
+// 1. UPDATE MODEL: Tambahkan 'id'
+class TransactionDetail {
+  final String id;
+  final String title;
+  final int amount;
+  final String type;
+  final DateTime date;
+  final String? description;
 
-  TransactionSummary({required this.income, required this.expense});
+  TransactionDetail({
+    required this.id,
+    required this.title,
+    required this.amount,
+    required this.type,
+    required this.date,
+    this.description,
+  });
+
+  factory TransactionDetail.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return TransactionDetail(
+      id: doc.id,
+      title: data['title'] ?? 'No Title',
+      amount: data['amount'] ?? 0,
+      type: data['type'] ?? 'expense',
+      date: (data['date'] as Timestamp).toDate(),
+      description: data['description'],
+    );
+  }
 }
 
-class KalenderPage extends StatelessWidget {
+class KalenderPage extends StatefulWidget {
   final VoidCallback onBack;
-  KalenderPage({super.key, required this.onBack});
+  const KalenderPage({super.key, required this.onBack});
 
-  final ValueNotifier<DateTime?> selectedDay = ValueNotifier(null);
-  final ValueNotifier<DateTime> focusedDay = ValueNotifier(DateTime.now());
+  @override
+  State<KalenderPage> createState() => _KalenderPageState();
+}
 
-  // 2. PERBAIKAN DATA DUMMY (Pastikan tanggalnya beda agar tidak tertimpa)
-  final Map<DateTime, TransactionSummary> dailySummary = {
-    DateTime(2025, 11, 10): TransactionSummary(income: 500000, expense: 0),
-    DateTime(2025, 11, 12): TransactionSummary(income: 0, expense: 200000),
-    DateTime(2025, 11, 15): TransactionSummary(income: 150000, expense: 50000),
-  };
+class _KalenderPageState extends State<KalenderPage> {
+  final User? user = FirebaseAuth.instance.currentUser;
 
-  // Helper format rupiah sederhana
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+  Map<DateTime, List<TransactionDetail>> _groupedEvents = {};
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDay = _focusedDay;
+    _fetchEvents();
+  }
+
+  Future<void> _fetchEvents() async {
+    if (user == null) return;
+
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .collection('transactions')
+          .orderBy('date', descending: true)
+          .get();
+
+      Map<DateTime, List<TransactionDetail>> tempGrouped = {};
+
+      for (var doc in snapshot.docs) {
+        final trx = TransactionDetail.fromFirestore(doc);
+        final dateKey = DateTime(trx.date.year, trx.date.month, trx.date.day);
+
+        if (tempGrouped[dateKey] == null) {
+          tempGrouped[dateKey] = [];
+        }
+        tempGrouped[dateKey]!.add(trx);
+      }
+
+      setState(() {
+        _groupedEvents = tempGrouped;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Error fetching calendar events: $e");
+      setState(() => _isLoading = false);
+    }
+  }
+
+  // 2. FUNGSI DELETE
+  Future<void> _deleteTransaction(String transId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .collection('transactions')
+          .doc(transId)
+          .delete();
+
+      _fetchEvents();
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Transaction deleted successfully"),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(20),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print("Error deleting: $e");
+    }
+  }
+
+  // 3. FUNGSI POP-UP DETAIL (DIALOG)
+  void _showDetailDialog(TransactionDetail trx) {
+    bool isIncome = trx.type == 'income';
+    Color typeColor = isIncome ? const Color(0xFF43A047) : const Color(0xFFE53935);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          elevation: 5,
+          backgroundColor: Colors.white,
+          child: Stack(
+            children: [
+              // TOMBOL CLOSE
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.grey),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+
+              // KONTEN UTAMA
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: typeColor.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                        color: typeColor,
+                        size: 40,
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+
+                    Text(
+                      trx.title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF004D40),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+
+                    Text(
+                      "${_formatDateFull(trx.date)} • ${_formatTime(trx.date)}",
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    ),
+                    const SizedBox(height: 20),
+
+                    Text(
+                      _formatCurrency(trx.amount),
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: typeColor,
+                      ),
+                    ),
+
+                    if (trx.description != null && trx.description!.isNotEmpty) ...[
+                      const SizedBox(height: 15),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          trx.description!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey[700]),
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 30),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Edit feature coming soon!")),
+                              );
+                            },
+                            icon: const Icon(Icons.edit, size: 18, color: Colors.white),
+                            label: const Text("Edit", style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFF1C854),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                  context: context,
+                                  builder: (c) => AlertDialog(
+                                    title: const Text("Delete Transaction?"),
+                                    content: const Text("This action cannot be undone."),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.pop(c), child: const Text("Cancel")),
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(c);
+                                            _deleteTransaction(trx.id);
+                                          },
+                                          child: const Text("Delete", style: TextStyle(color: Colors.red))
+                                      ),
+                                    ],
+                                  )
+                              );
+                            },
+                            icon: const Icon(Icons.delete, size: 18, color: Colors.white),
+                            label: const Text("Delete", style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFE53935),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  List<TransactionDetail> _getEventsForDay(DateTime day) {
+    final normalizedDay = DateTime(day.year, day.month, day.day);
+    return _groupedEvents[normalizedDay] ?? [];
+  }
+
   String _formatCurrency(int amount) {
     return "Rp${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}";
   }
 
-  // 3. WIDGET TANGGAL YANG DIPERBAIKI (CUSTOM CELL)
-  Widget _buildCustomDay(DateTime day, bool isSelected, bool isToday, TransactionSummary? summary) {
+  // FORCE English Locale ('en_US') agar outputnya "08:30" bukan format lokal lain
+  String _formatTime(DateTime date) {
+    return DateFormat('HH:mm', 'en_US').format(date);
+  }
+
+  // FORCE English Locale agar nama bulan jadi "December" bukan "Desember"
+  String _formatDateFull(DateTime date) {
+    return DateFormat('d MMMM yyyy', 'en_US').format(date);
+  }
+
+  String _getMonthName(int month) {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return months[month - 1];
+  }
+
+  Map<String, int> _calculateSummary(List<TransactionDetail> transactions) {
+    int income = 0;
+    int expense = 0;
+    for (var trx in transactions) {
+      if (trx.type == 'income') income += trx.amount;
+      else expense += trx.amount;
+    }
+    return {'income': income, 'expense': expense};
+  }
+
+  Widget _buildCustomDay(DateTime day, bool isSelected, bool isToday) {
+    final events = _getEventsForDay(day);
     Color? markerColor;
-    if (summary != null) {
-      if (summary.income > summary.expense) {
-        markerColor = const Color(0xFF43A047); // Hijau segar
+
+    if (events.isNotEmpty) {
+      final summary = _calculateSummary(events);
+      if (summary['income']! >= summary['expense']!) {
+        markerColor = const Color(0xFF43A047);
       } else {
-        markerColor = const Color(0xFFE53935); // Merah terang
+        markerColor = const Color(0xFFE53935);
       }
     }
 
-    // Warna Background Lingkaran Utama
     Color bgCircle = Colors.transparent;
-    Color textColor = const Color(0xFF004D40); // Default text hijau tua
+    Color textColor = const Color(0xFF004D40);
 
     if (isSelected) {
-      bgCircle = const Color(0xFF004D40); // Selected: Hijau Tua Solid
+      bgCircle = const Color(0xFF004D40);
       textColor = Colors.white;
     } else if (isToday) {
-      bgCircle = const Color(0xFFF1C854); // Today: Kuning Emas
+      bgCircle = const Color(0xFFF1C854);
       textColor = Colors.black;
     }
 
@@ -57,14 +332,7 @@ class KalenderPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: bgCircle,
         shape: BoxShape.circle,
-        // Tambahkan shadow sedikit jika selected biar pop-up
-        boxShadow: isSelected ? [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          )
-        ] : [],
+        boxShadow: isSelected ? [const BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))] : [],
       ),
       alignment: Alignment.center,
       child: Column(
@@ -78,14 +346,12 @@ class KalenderPage extends StatelessWidget {
               fontSize: 14,
             ),
           ),
-          // MARKER: Titik kecil di bawah angka
           if (markerColor != null) ...[
             const SizedBox(height: 4),
             Container(
-              width: 5,
-              height: 5,
+              width: 5, height: 5,
               decoration: BoxDecoration(
-                color: isSelected ? Colors.white : markerColor, // Jika selected, titik jadi putih biar kontras
+                color: isSelected ? Colors.white : markerColor,
                 shape: BoxShape.circle,
               ),
             ),
@@ -98,7 +364,7 @@ class KalenderPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1ECDE), // Background Cream
+      backgroundColor: const Color(0xFFF1ECDE),
       appBar: AppBar(
         backgroundColor: const Color(0xFF004D40),
         elevation: 0,
@@ -106,12 +372,13 @@ class KalenderPage extends StatelessWidget {
         title: const Text("Calendar", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: onBack,
+          onPressed: widget.onBack,
         ),
       ),
-      body: Column(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF004D40)))
+          : Column(
         children: [
-          // KOTAK KALENDER DENGAN STYLE BARU
           Container(
             margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             padding: const EdgeInsets.only(bottom: 10),
@@ -126,88 +393,104 @@ class KalenderPage extends StatelessWidget {
                 )
               ],
             ),
-            child: ValueListenableBuilder(
-              valueListenable: focusedDay,
-              builder: (context, DateTime fDay, _) {
-                return TableCalendar(
-                  firstDay: DateTime.utc(2020, 1, 1),
-                  lastDay: DateTime.utc(2030, 1, 1),
-                  focusedDay: fDay,
-                  calendarFormat: CalendarFormat.month,
-                  headerStyle: const HeaderStyle(
-                    titleCentered: true,
-                    formatButtonVisible: false,
-                    titleTextStyle: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF004D40),
-                    ),
-                    leftChevronIcon: Icon(Icons.chevron_left, color: Color(0xFFF1C854)),
-                    rightChevronIcon: Icon(Icons.chevron_right, color: Color(0xFFF1C854)),
-                  ),
-                  calendarStyle: const CalendarStyle(
-                    outsideDaysVisible: false, // Hilangkan tanggal bulan lain agar bersih
-                  ),
-                  selectedDayPredicate: (day) => isSameDay(selectedDay.value, day),
-                  onDaySelected: (day, fday) {
-                    selectedDay.value = day;
-                    focusedDay.value = fday;
-                  },
-                  onPageChanged: (fDay) {
-                    focusedDay.value = fDay;
-                  },
-
-                  // BUILDER UNTUK KUSTOMISASI TAMPILAN
-                  calendarBuilders: CalendarBuilders(
-                    // Builder Default (Hari biasa)
-                    defaultBuilder: (context, day, focusedDay) {
-                      final key = DateTime(day.year, day.month, day.day);
-                      return _buildCustomDay(day, false, false, dailySummary[key]);
-                    },
-                    // Builder Selected (Hari dipilih)
-                    selectedBuilder: (context, day, focusedDay) {
-                      final key = DateTime(day.year, day.month, day.day);
-                      return _buildCustomDay(day, true, false, dailySummary[key]);
-                    },
-                    // Builder Today (Hari ini)
-                    todayBuilder: (context, day, focusedDay) {
-                      final key = DateTime(day.year, day.month, day.day);
-                      // Cek apakah hari ini juga sedang dipilih?
-                      bool isSelected = isSameDay(day, selectedDay.value);
-                      return _buildCustomDay(day, isSelected, true, dailySummary[key]);
-                    },
-                  ),
-                );
+            child: TableCalendar(
+              // Force English Locale di Kalender (biar hari & bulan jadi Mon/Tue & Jan/Feb)
+              locale: 'en_US',
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 1, 1),
+              focusedDay: _focusedDay,
+              calendarFormat: CalendarFormat.month,
+              headerStyle: const HeaderStyle(
+                titleCentered: true,
+                formatButtonVisible: false,
+                titleTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                leftChevronIcon: Icon(Icons.chevron_left, color: Color(0xFFF1C854)),
+                rightChevronIcon: Icon(Icons.chevron_right, color: Color(0xFFF1C854)),
+              ),
+              calendarStyle: const CalendarStyle(outsideDaysVisible: false),
+              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+              eventLoader: _getEventsForDay,
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                });
               },
+              onPageChanged: (focusedDay) => _focusedDay = focusedDay,
+              calendarBuilders: CalendarBuilders(
+                markerBuilder: (context, day, events) => const SizedBox(),
+                defaultBuilder: (context, day, focusedDay) => _buildCustomDay(day, false, false),
+                selectedBuilder: (context, day, focusedDay) => _buildCustomDay(day, true, false),
+                todayBuilder: (context, day, focusedDay) {
+                  bool isSelected = isSameDay(day, _selectedDay);
+                  return _buildCustomDay(day, isSelected, true);
+                },
+              ),
             ),
           ),
 
           const SizedBox(height: 10),
 
-          // PANEL DETAIL TRANSAKSI
           Expanded(
-            child: ValueListenableBuilder(
-              valueListenable: selectedDay,
-              builder: (context, DateTime? day, _) {
-                if (day == null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.touch_app, size: 40, color: Colors.grey[400]),
-                        const SizedBox(height: 10),
-                        Text(
-                          "Pilih tanggal untuk melihat detail",
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
-                  );
+            child: Builder(
+              builder: (context) {
+                final selectedEvents = _getEventsForDay(_selectedDay ?? _focusedDay);
+                String dateString = "";
+                if (_selectedDay != null) {
+                  dateString = "${_selectedDay!.day} ${_getMonthName(_selectedDay!.month)} ${_selectedDay!.year}";
                 }
 
-                final summary = dailySummary[DateTime(day.year, day.month, day.day)];
+                return Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(30),
+                        topRight: Radius.circular(30),
+                      ),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4))
+                      ]
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text("Transaction List", style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                          Text(dateString, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
+                        ],
+                      ),
+                      const Divider(height: 20),
 
-                return _buildDetailCard(day, summary);
+                      Expanded(
+                        child: selectedEvents.isEmpty
+                            ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.notes, size: 40, color: Colors.grey[300]),
+                              const SizedBox(height: 8),
+                              Text("No transactions available.", style: TextStyle(color: Colors.grey[400])),
+                            ],
+                          ),
+                        )
+                            : ListView.separated(
+                          itemCount: selectedEvents.length,
+                          padding: const EdgeInsets.only(bottom: 20),
+                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final trx = selectedEvents[index];
+                            return _buildTransactionCard(trx);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
           ),
@@ -216,110 +499,56 @@ class KalenderPage extends StatelessWidget {
     );
   }
 
-  // 4. WIDGET KARTU DETAIL YANG LEBIH BAGUS
-  Widget _buildDetailCard(DateTime day, TransactionSummary? summary) {
-    // Format tanggal cantik
-    String dateString = "${day.day} ${_getMonthName(day.month)} ${day.year}";
+  Widget _buildTransactionCard(TransactionDetail trx) {
+    bool isIncome = trx.type == 'income';
+    Color mainColor = isIncome ? const Color(0xFF43A047) : const Color(0xFFE53935);
+    Color bgColor = isIncome ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE);
+    IconData icon = isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
+    // BUNGKUS DENGAN INKWELL AGAR BISA DIKLIK
+    return InkWell(
+      onTap: () => _showDetailDialog(trx), // Munculkan Dialog saat diklik
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border(
+            left: BorderSide(color: mainColor, width: 5),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            )
-          ]
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Tanggal
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text("Transaksi Harian", style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-              Text(dateString, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40))),
-            ],
-          ),
-          const Divider(height: 30),
-
-          if (summary == null)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Text("Tidak ada transaksi pada tanggal ini.", style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
-              ),
-            )
-          else
-            Column(
-              children: [
-                // Item Pemasukan
-                _buildTransactionItem(
-                    "Pemasukan",
-                    summary.income,
-                    Icons.arrow_circle_up_rounded,
-                    const Color(0xFF43A047),
-                    const Color(0xFFE8F5E9)
-                ),
-                const SizedBox(height: 15),
-                // Item Pengeluaran
-                _buildTransactionItem(
-                    "Pengeluaran",
-                    summary.expense,
-                    Icons.arrow_circle_down_rounded,
-                    const Color(0xFFE53935),
-                    const Color(0xFFFFEBEE)
-                ),
-              ],
-            )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTransactionItem(String title, int amount, IconData icon, Color color, Color bgColor) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TextStyle(color: Colors.grey[700], fontSize: 13)),
-                Text(
-                  _formatCurrency(amount),
-                  style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16
-                  ),
-                ),
-              ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+              child: Icon(icon, color: mainColor, size: 20),
             ),
-          ),
-        ],
+            const SizedBox(width: 15),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    trx.title,
+                    style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "${isIncome ? 'Income' : 'Expense'} • ${_formatTime(trx.date)}",
+                    style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              _formatCurrency(trx.amount),
+              style: TextStyle(color: mainColor, fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ],
+        ),
       ),
     );
-  }
-
-  String _getMonthName(int month) {
-    const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-    return months[month - 1];
   }
 }
