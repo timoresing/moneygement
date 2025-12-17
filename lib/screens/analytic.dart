@@ -17,20 +17,20 @@ class _AnalyticPageState extends State<AnalyticPage> {
   int currentMonth = DateTime.now().month;
   int currentYear = DateTime.now().year;
 
-  // Data Grafik: Persentase (0-100) & Total Uang
+  // Data Grafik Persentase (0-100%) & Total Uangnya
   List<double> _chartPercentages = [0, 0, 0, 0, 0];
   List<double> _chartTotals = [0, 0, 0, 0, 0];
   bool _isLoading = false;
 
-  // Label Kategori
+  // LABEL KATEGORI
   final List<String> kategoriLabel = ["F&D", "Trans", "Bills", "Shop", "Misc"];
 
-  // Helper Format Rupiah
+  // FORMAT RUPIAH
   String formatRupiah(double number) {
     return "Rp${number.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}";
   }
 
-  // Logic Kategori Pintar
+  // LOGIC KATEGORI
   int _getCategoryIndex(String category, String title) {
     String combined = "$category $title".toLowerCase();
     if (combined.contains('food') || combined.contains('drink') || combined.contains('makan') || combined.contains('minum') || combined.contains('jajan')) return 0;
@@ -40,6 +40,7 @@ class _AnalyticPageState extends State<AnalyticPage> {
     return 4;
   }
 
+  // LIST BULAN
   final List<String> monthNames = [
     "January","February","March","April","May","June",
     "July","August","September","October","November","December"
@@ -134,7 +135,7 @@ class _AnalyticPageState extends State<AnalyticPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1ECDE), // <--- WARNA BACKGROUND BARU
+      backgroundColor: const Color(0xFFF1ECDE),
       appBar: AppBar(
         backgroundColor: const Color(0xFF004D40),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -159,7 +160,7 @@ class _AnalyticPageState extends State<AnalyticPage> {
               ),
             ),
 
-            // Header Navigasi Bulan
+            // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -192,8 +193,9 @@ class _AnalyticPageState extends State<AnalyticPage> {
                           // Ambil total uang dari list _chartTotals
                           double totalAmount = _chartTotals[group.x];
 
+                          // SAAT TAP BAR CHART
                           return BarTooltipItem(
-                            // Baris 1: Persentase (Putih Tebal)
+                            // Persentase (Putih Tebal)
                             '${rod.toY.toStringAsFixed(1)}%\n',
                             const TextStyle(
                               color: Colors.white,
@@ -201,7 +203,7 @@ class _AnalyticPageState extends State<AnalyticPage> {
                               fontSize: 14,
                             ),
                             children: [
-                              // Baris 2: Rupiah (Putih Pudar)
+                              // Rupiah (Putih Pudar)
                               TextSpan(
                                 text: formatRupiah(totalAmount),
                                 style: const TextStyle(
@@ -265,7 +267,7 @@ class _AnalyticPageState extends State<AnalyticPage> {
                             backDrawRodData: BackgroundBarChartRodData(
                               show: true,
                               toY: 100,
-                              color: Colors.black12, // Sedikit digelapkan agar terlihat di background cream
+                              color: Colors.black12,
                             ),
                           ),
                         ],

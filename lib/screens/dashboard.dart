@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // <--- 1. WAJIB IMPORT INI
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../service/auth_service.dart';
@@ -18,23 +18,171 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final User? user = FirebaseAuth.instance.currentUser;
 
-  // State Search & Filter
+  // DIALOG EDIT
+  void _showEditDialog(String id, String currentTitle, int currentAmount, String currentType, DateTime currentDate, String? currentDesc) {
+    final titleController = TextEditingController(text: currentTitle);
+    final amountController = TextEditingController(text: currentAmount.toString());
+    final descController = TextEditingController(text: currentDesc ?? "");
+
+    DateTime selectedDate = currentDate;
+    TimeOfDay selectedTime = TimeOfDay.fromDateTime(currentDate);
+    String selectedType = currentType;
+
+    showDialog(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+              builder: (context, setDialogState) {
+                return AlertDialog(
+                  title: const Text("Edit Transaction"),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: titleController,
+                          decoration: const InputDecoration(labelText: "Title"),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: amountController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          decoration: const InputDecoration(labelText: "Amount"),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: RadioListTile<String>(
+                                title: const Text("Income", style: TextStyle(fontSize: 12)),
+                                value: "income",
+                                groupValue: selectedType.toLowerCase(),
+                                contentPadding: EdgeInsets.zero,
+                                onChanged: (val) => setDialogState(() => selectedType = "income"),
+                              ),
+                            ),
+                            Expanded(
+                              child: RadioListTile<String>(
+                                title: const Text("Expense", style: TextStyle(fontSize: 12)),
+                                value: "expense",
+                                groupValue: selectedType.toLowerCase(),
+                                contentPadding: EdgeInsets.zero,
+                                onChanged: (val) => setDialogState(() => selectedType = "expense"),
+                              ),
+                            ),
+                          ],
+                        ),
+                        // DATE PICKER
+                        ListTile(
+                          title: Text("Date: ${_formatDateFull(selectedDate)}"),
+                          trailing: const Icon(Icons.calendar_month),
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                                context: context,
+                                initialDate: selectedDate,
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime(2030)
+                            );
+                            if (picked != null) setDialogState(() => selectedDate = picked);
+                          },
+                        ),
+
+                        TextField(
+                          controller: descController,
+                          decoration: const InputDecoration(labelText: "Description"),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40)),
+                      onPressed: () {
+                        if (titleController.text.isEmpty || amountController.text.isEmpty) return;
+
+                        int newAmount = int.parse(amountController.text);
+                        DateTime finalDateTime = DateTime(
+                            selectedDate.year, selectedDate.month, selectedDate.day,
+                            selectedTime.hour, selectedTime.minute
+                        );
+                        _updateTransaction(
+                          transId: id,
+                          newAmount: newAmount,
+                          newType: selectedType,
+                          newTitle: titleController.text,
+                          newDesc: descController.text,
+                          newDate: finalDateTime,
+                        );
+                      },
+                      child: const Text("Save", style: TextStyle(color: Colors.white)),
+                    )
+                  ],
+                );
+              }
+          );
+        }
+    );
+  }
+
+  // BACKEND UPDATE
+  Future<void> _updateTransaction({
+    required String transId,
+    required int newAmount,
+    required String newType,
+    required String newTitle,
+    required String newDesc,
+    required DateTime newDate,
+  }) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .collection('transactions')
+          .doc(transId)
+          .update({
+        'title': newTitle,
+        'amount': newAmount,
+        'type': newType,
+        'description': newDesc,
+        'date': Timestamp.fromDate(newDate),
+      });
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Successfully updated!"),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(20),
+            duration: Duration(seconds: 2),),
+        );
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
   String _searchQuery = "";
   String _selectedFilter = "All";
 
+  // RUPIAH FORMATER
   String formatRupiah(num number) {
     return "Rp${number.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}";
   }
 
+  // FORMAT TANGGAL
   String _formatDateFull(DateTime date) {
     return DateFormat('d MMMM yyyy').format(date);
   }
 
+  // FORMAT WAKTU
   String _formatTime(DateTime date) {
     return DateFormat('HH:mm').format(date);
   }
 
-  Future<void> _deleteTransaction(String transId) async {
+  // BACKEND DELETE
+  Future<void> _deleteTransaction(String transId, int amount, String type) async {
     try {
       await FirebaseFirestore.instance
           .collection('users')
@@ -46,22 +194,22 @@ class _DashboardPageState extends State<DashboardPage> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Transaction deleted successfully"),
+          const SnackBar(content: Text("Successfully deleted!"),
+            backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.red,
-          ),
+            margin: EdgeInsets.all(20),
+            duration: Duration(seconds: 2),),
         );
       }
     } catch (e) {
-      print("Error deleting: $e");
+      print("Error: $e");
     }
   }
 
-  void _showDetailDialog(String id, String title, int amount, String type, DateTime date, String? description) {
+  // DIALOG DETAIL CARD AKTIVITAS SATUAN
+  void _showDetailDialog(String id, String title, int amount, String type, DateTime date, String? description, category) {
     bool isIncome = type == 'income';
     Color typeColor = isIncome ? const Color(0xFF43A047) : const Color(0xFFE53935);
-
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -120,6 +268,32 @@ class _DashboardPageState extends State<DashboardPage> {
                         color: typeColor,
                       ),
                     ),
+                    if (!isIncome && category.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.blueGrey.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.blueGrey.withOpacity(0.2)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.category_outlined, size: 14, color: Colors.blueGrey[700]),
+                            const SizedBox(width: 6),
+                            Text(
+                              category,
+                              style: TextStyle(
+                                color: Colors.blueGrey[800],
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     if (description != null && description.isNotEmpty) ...[
                       const SizedBox(height: 15),
                       Container(
@@ -142,9 +316,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           child: ElevatedButton.icon(
                             onPressed: () {
                               Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Edit feature coming soon!")),
-                              );
+                              _showEditDialog(id, title, amount, type, date, description);
                             },
                             icon: const Icon(Icons.edit, size: 18, color: Colors.white),
                             label: const Text("Edit", style: TextStyle(color: Colors.white)),
@@ -161,6 +333,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             onPressed: () {
                               showDialog(
                                   context: context,
+                                  // ALERT SEBELUM MENGHAPOS
                                   builder: (c) => AlertDialog(
                                     title: const Text("Delete Transaction?"),
                                     content: const Text("This action cannot be undone."),
@@ -169,7 +342,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                       TextButton(
                                           onPressed: () {
                                             Navigator.pop(c);
-                                            _deleteTransaction(id);
+                                            _deleteTransaction(id, amount, type);
                                           },
                                           child: const Text("Delete", style: TextStyle(color: Colors.red))
                                       ),
@@ -198,6 +371,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  // DIALOG TAMBAH BALANCE/SALDO
   void showAddBalanceDialog() {
     TextEditingController titleController = TextEditingController();
     TextEditingController amountController = TextEditingController();
@@ -274,7 +448,6 @@ class _DashboardPageState extends State<DashboardPage> {
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40)),
                           onPressed: () async {
-                            // Cleaning juga tetap ada untuk jaga-jaga
                             String cleanValue = amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
                             int? amount = int.tryParse(cleanValue);
                             String title = titleController.text.trim();
@@ -391,180 +564,177 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
 
-      // --- BODY UTAMA ---
-      body: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(user?.uid)
+            .collection('transactions')
+            .orderBy('date', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            int currentBalance = 0;
-            int currentIncome = 0;
-            int currentExpense = 0;
+          int totalIncome = 0;
+          int totalExpense = 0;
+          int totalBalance = 0;
 
-            if (snapshot.hasData && snapshot.data!.exists) {
-              var data = snapshot.data!.data() as Map<String, dynamic>;
-              currentIncome = data['income'] ?? 0;
-              currentExpense = data['expense'] ?? 0;
-              currentBalance = data['balance'] ?? (currentIncome - currentExpense);
+          var allDocs = snapshot.data?.docs ?? [];
+
+          for (var doc in allDocs) {
+            var data = doc.data() as Map<String, dynamic>;
+            int amount = data['amount'] ?? 0;
+            String type = (data['type'] ?? 'expense').toString().toLowerCase();
+            if (type == 'income') {
+              totalIncome += amount;
+            } else {
+              totalExpense += amount;
             }
+          }
 
-            return Column(
-              children: [
-                // FIXED TOP AREA
-                Container(
-                  color: backgroundColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.all(18),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF004D40),
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(2, 4))],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text("Balance", style: GoogleFonts.poppins(color: Colors.white70, fontSize: 15)),
-                                  const SizedBox(height: 8),
-                                  Text(formatRupiah(currentBalance), style: GoogleFonts.poppins(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          GestureDetector(
-                            onTap: showAddBalanceDialog,
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE0AA00),
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(2, 4))],
-                              ),
-                              child: const Icon(Icons.add, color: Colors.black, size: 28),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          Expanded(child: _moneyCard("Expense", currentExpense, Colors.red)),
-                          const SizedBox(width: 14),
-                          Expanded(child: _moneyCard("Income", currentIncome, Colors.green)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+          totalBalance = totalIncome - totalExpense;
 
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEFEBDD),
-                      borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          return Column(
+            children: [
+              Container(
+                color: backgroundColor,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                child: Column(
+                  children: [
+                    // CARD BALANCE
+                    Row(
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Recent Activity", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFFC86623), fontSize: 20)),
-                              const SizedBox(height: 25),
-
-                              SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.filter_alt_outlined, color: Color(0xFFC86623)),
-                                    const SizedBox(width: 8),
-                                    Text("Filter:", style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-                                    const SizedBox(width: 10),
-
-                                    _buildFilterChip("All"),
-                                    const SizedBox(width: 6),
-                                    _buildFilterChip("Income"),
-                                    const SizedBox(width: 6),
-                                    _buildFilterChip("Expense"),
-                                  ],
-                                ),
-                              ),
-                            ],
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF004D40),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(2, 4))],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("Balance", style: GoogleFonts.poppins(color: Colors.white70, fontSize: 15)),
+                                const SizedBox(height: 8),
+                                Text(formatRupiah(totalBalance), style: GoogleFonts.poppins(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
                           ),
                         ),
-
-                        Expanded(
-                          child: StreamBuilder<QuerySnapshot>(
-                            stream: FirebaseFirestore.instance
-                                .collection('users')
-                                .doc(user?.uid)
-                                .collection('transactions')
-                                .orderBy('date', descending: true)
-                                .limit(50)
-                                .snapshots(),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return _buildEmptyState();
-                              var docs = snapshot.data!.docs;
-
-                              var filteredDocs = docs.where((doc) {
-                                var data = doc.data() as Map<String, dynamic>;
-                                String title = data['title'].toString().toLowerCase();
-                                String type = data['type'].toString().toLowerCase();
-                                bool matchesSearch = title.contains(_searchQuery);
-                                bool matchesFilter = true;
-                                if (_selectedFilter != "All") {
-                                  matchesFilter = type == _selectedFilter.toLowerCase();
-                                }
-                                return matchesSearch && matchesFilter;
-                              }).toList();
-
-                              if (filteredDocs.isEmpty) {
-                                return Center(
-                                  child: Text("No results found", style: GoogleFonts.poppins(color: Colors.grey)),
-                                );
-                              }
-
-                              return ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 20),
-                                itemCount: filteredDocs.length,
-                                itemBuilder: (context, index) {
-                                  var doc = filteredDocs[index];
-                                  var data = doc.data() as Map<String, dynamic>;
-                                  String id = doc.id;
-                                  String title = data['title'] ?? 'No Title';
-                                  int amount = data['amount'] ?? 0;
-                                  String type = data['type'] ?? 'expense';
-                                  DateTime date = (data['date'] as Timestamp).toDate();
-                                  String? description = data['description'];
-
-                                  return _activityItem(id, title, amount, type, date, description);
-                                },
-                              );
-                            },
+                        const SizedBox(width: 10),
+                        // BUTTON ADD
+                        GestureDetector(
+                          onTap: showAddBalanceDialog,
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE0AA00),
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(2, 4))],
+                            ),
+                            child: const Icon(Icons.add, color: Colors.black, size: 28),
                           ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 20),
+                    // CARD INCOME & EXPENSE
+                    Row(
+                      children: [
+                        Expanded(child: _moneyCard("Expense", totalExpense, Colors.red)),
+                        const SizedBox(width: 14),
+                        Expanded(child: _moneyCard("Income", totalIncome, Colors.green)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // BAGIAN BAWAH (LIST RIWAYAT)
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFEFEBDD),
+                    borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Recent Activity", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFFC86623), fontSize: 20)),
+                            const SizedBox(height: 25),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.filter_alt_outlined, color: Color(0xFFC86623)),
+                                  const SizedBox(width: 8),
+                                  Text("Filter:", style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+                                  const SizedBox(width: 10),
+                                  _buildFilterChip("All"),
+                                  const SizedBox(width: 6),
+                                  _buildFilterChip("Income"),
+                                  const SizedBox(width: 6),
+                                  _buildFilterChip("Expense"),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      Expanded(
+                        child: allDocs.isEmpty
+                            ? _buildEmptyState()
+                            : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: allDocs.length,
+                          itemBuilder: (context, index) {
+                            var doc = allDocs[index];
+                            var data = doc.data() as Map<String, dynamic>;
+
+                            // Logic Filter & Search Manual
+                            String title = data['title'].toString();
+                            String type = data['type'].toString().toLowerCase();
+                            String category = (data['category'] ?? '').toString();
+
+                            // Filter logic simple
+                            if (_selectedFilter != "All" && type != _selectedFilter.toLowerCase()) {
+                              return const SizedBox();
+                            }
+
+                            // Render Item
+                            return _activityItem(
+                                doc.id,
+                                title,
+                                data['amount'] ?? 0,
+                                type,
+                                (data['date'] as Timestamp).toDate(),
+                                data['description'],
+                                category
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            );
-          }
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  // --- WIDGET HELPERS ---
+  // WIDGET HELPERS (All, Income, Expense)
   Widget _buildFilterChip(String label) {
     bool isSelected = _selectedFilter == label;
     return GestureDetector(
@@ -592,6 +762,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  // KALAU BELUM/TIDAK ADA TRANKSAKSI
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -605,6 +776,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  // WIDGET CARD INCOME/EXPENSE BESERTA LOGIC
   Widget _moneyCard(String title, int amount, Color typeColor) {
     bool isZero = amount == 0;
     Color activeColor = isZero ? Colors.grey.shade400 : typeColor;
@@ -641,11 +813,12 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _activityItem(String id, String title, int amount, String type, DateTime date, String? description) {
+  // CARD-CARD AKTIVITAS
+  Widget _activityItem(String id, String title, int amount, String type, DateTime date, String? description, category) {
     Color color = (type == 'income') ? Colors.green : Colors.red;
     return InkWell(
       onTap: () {
-        _showDetailDialog(id, title, amount, type, date, description);
+        _showDetailDialog(id, title, amount, type, date, description, category);
       },
       borderRadius: BorderRadius.circular(14),
       child: Container(

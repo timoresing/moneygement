@@ -1,15 +1,17 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 
-// 1. UPDATE MODEL: Tambahkan 'id'
 class TransactionDetail {
   final String id;
   final String title;
   final int amount;
   final String type;
+  final String category;
   final DateTime date;
   final String? description;
 
@@ -18,6 +20,7 @@ class TransactionDetail {
     required this.title,
     required this.amount,
     required this.type,
+    required this.category,
     required this.date,
     this.description,
   });
@@ -28,7 +31,8 @@ class TransactionDetail {
       id: doc.id,
       title: data['title'] ?? 'No Title',
       amount: data['amount'] ?? 0,
-      type: data['type'] ?? 'expense',
+      type: (data['type'] ?? 'expense').toString().toLowerCase(),
+      category: data['category'] ?? 'Not Set',
       date: (data['date'] as Timestamp).toDate(),
       description: data['description'],
     );
@@ -50,24 +54,36 @@ class _KalenderPageState extends State<KalenderPage> {
   DateTime? _selectedDay;
   Map<DateTime, List<TransactionDetail>> _groupedEvents = {};
   bool _isLoading = true;
+  StreamSubscription<QuerySnapshot>? _streamSubscription;
+
+  final List<String> _categories = [
+    'Food & Drink', 'Transport', 'Bill & Utilities', 'Shopping', 'Miscellaneous', 'Not Set'
+  ];
 
   @override
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
-    _fetchEvents();
+    _listenToEvents();
   }
 
-  Future<void> _fetchEvents() async {
+  @override
+  void dispose() {
+    _streamSubscription?.cancel();
+    super.dispose();
+  }
+
+  // LISTEN EVENTS
+  void _listenToEvents() {
     if (user == null) return;
 
-    try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user!.uid)
-          .collection('transactions')
-          .orderBy('date', descending: true)
-          .get();
+    _streamSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.uid)
+        .collection('transactions')
+        .orderBy('date', descending: true)
+        .snapshots()
+        .listen((snapshot) {
 
       Map<DateTime, List<TransactionDetail>> tempGrouped = {};
 
@@ -81,17 +97,61 @@ class _KalenderPageState extends State<KalenderPage> {
         tempGrouped[dateKey]!.add(trx);
       }
 
-      setState(() {
-        _groupedEvents = tempGrouped;
-        _isLoading = false;
-      });
-    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _groupedEvents = tempGrouped;
+          _isLoading = false;
+        });
+      }
+    }, onError: (e) {
       print("Error fetching calendar events: $e");
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
+    });
+  }
+
+  // FUNGSI UPDATE
+  Future<void> _updateTransaction({
+    required String transId,
+    required String newTitle,
+    required int newAmount,
+    required String newType,
+    required String newCategory,
+    required DateTime newDate,
+    required String newDesc,
+  }) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .collection('transactions')
+          .doc(transId)
+          .update({
+        'title': newTitle,
+        'amount': newAmount,
+        'type': newType,
+        'category': newCategory,
+        'description': newDesc,
+        'date': Timestamp.fromDate(newDate),
+      });
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Successfully updated!"),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(20),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print("Error updating: $e");
     }
   }
 
-  // 2. FUNGSI DELETE
+  // FUNGSI DELETE
   Future<void> _deleteTransaction(String transId) async {
     try {
       await FirebaseFirestore.instance
@@ -101,12 +161,11 @@ class _KalenderPageState extends State<KalenderPage> {
           .doc(transId)
           .delete();
 
-      _fetchEvents();
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Transaction deleted successfully"),
+            content: Text("Successfully deleted!"),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             margin: EdgeInsets.all(20),
@@ -119,7 +178,168 @@ class _KalenderPageState extends State<KalenderPage> {
     }
   }
 
-  // 3. FUNGSI POP-UP DETAIL (DIALOG)
+  // DIALOG EDIT
+  void _showEditDialog(TransactionDetail trx) {
+    final titleController = TextEditingController(text: trx.title);
+    final amountController = TextEditingController(text: trx.amount.toString());
+    final descController = TextEditingController(text: trx.description ?? '');
+
+    String selectedType = trx.type;
+    String selectedCategory = _categories.contains(trx.category) ? trx.category : _categories.first;
+    DateTime selectedDate = trx.date;
+    TimeOfDay selectedTime = TimeOfDay.fromDateTime(trx.date);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text("Edit Transaction"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: titleController,
+                      decoration: const InputDecoration(labelText: "Title"),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: amountController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(labelText: "Amount (Rp)"),
+                    ),
+                    const SizedBox(height: 15),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: RadioListTile<String>(
+                            title: const Text("Income", style: TextStyle(fontSize: 12)),
+                            value: "income",
+                            groupValue: selectedType,
+                            contentPadding: EdgeInsets.zero,
+                            activeColor: const Color(0xFF43A047),
+                            onChanged: (val) => setDialogState(() => selectedType = val!),
+                          ),
+                        ),
+                        Expanded(
+                          child: RadioListTile<String>(
+                            title: const Text("Expense", style: TextStyle(fontSize: 12)),
+                            value: "expense",
+                            groupValue: selectedType,
+                            contentPadding: EdgeInsets.zero,
+                            activeColor: const Color(0xFFE53935),
+                            onChanged: (val) => setDialogState(() => selectedType = val!),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    if (selectedType == 'expense') ...[
+                      const SizedBox(height: 10),
+                      DropdownButtonFormField<String>(
+                        value: selectedCategory,
+                        decoration: const InputDecoration(
+                          labelText: "Category",
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        ),
+                        items: _categories.map((String category) {
+                          return DropdownMenuItem<String>(
+                            value: category,
+                            child: Text(category),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) {
+                          setDialogState(() => selectedCategory = newValue!);
+                        },
+                      ),
+                    ],
+
+                    const SizedBox(height: 5),
+
+                    // Date Picker
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text("Date: ${_formatDateFull(selectedDate)}"),
+                      trailing: const Icon(Icons.calendar_today, size: 16),
+                      onTap: () async {
+                        final pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime(2030),
+                        );
+                        if (pickedDate != null) setDialogState(() => selectedDate = pickedDate);
+                      },
+                    ),
+
+                    // Time Picker
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text("Time: ${selectedTime.format(context)}"),
+                      trailing: const Icon(Icons.access_time, size: 16),
+                      onTap: () async {
+                        final pickedTime = await showTimePicker(
+                          context: context,
+                          initialTime: selectedTime,
+                        );
+                        if (pickedTime != null) setDialogState(() => selectedTime = pickedTime);
+                      },
+                    ),
+
+                    TextField(
+                      controller: descController,
+                      decoration: const InputDecoration(labelText: "Description"),
+                      maxLines: 2,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40)),
+                  onPressed: () {
+                    FocusScope.of(context).unfocus();
+
+                    if (titleController.text.isEmpty || amountController.text.isEmpty) return;
+
+                    final newDateTime = DateTime(
+                      selectedDate.year, selectedDate.month, selectedDate.day,
+                      selectedTime.hour, selectedTime.minute,
+                    );
+
+                    String finalCategory = (selectedType == 'income') ? 'Income' : selectedCategory;
+
+                    _updateTransaction(
+                      transId: trx.id,
+                      newTitle: titleController.text,
+                      newAmount: int.parse(amountController.text),
+                      newType: selectedType,
+                      newCategory: finalCategory,
+                      newDate: newDateTime,
+                      newDesc: descController.text,
+                    );
+                  },
+                  child: const Text("Save", style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // DETAIL DIALOG
   void _showDetailDialog(TransactionDetail trx) {
     bool isIncome = trx.type == 'income';
     Color typeColor = isIncome ? const Color(0xFF43A047) : const Color(0xFFE53935);
@@ -133,7 +353,6 @@ class _KalenderPageState extends State<KalenderPage> {
           backgroundColor: Colors.white,
           child: Stack(
             children: [
-              // TOMBOL CLOSE
               Positioned(
                 top: 8,
                 right: 8,
@@ -142,8 +361,6 @@ class _KalenderPageState extends State<KalenderPage> {
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
-
-              // KONTEN UTAMA
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
                 child: Column(
@@ -162,7 +379,6 @@ class _KalenderPageState extends State<KalenderPage> {
                       ),
                     ),
                     const SizedBox(height: 15),
-
                     Text(
                       trx.title,
                       textAlign: TextAlign.center,
@@ -173,13 +389,11 @@ class _KalenderPageState extends State<KalenderPage> {
                       ),
                     ),
                     const SizedBox(height: 5),
-
                     Text(
                       "${_formatDateFull(trx.date)} • ${_formatTime(trx.date)}",
                       style: TextStyle(color: Colors.grey[600], fontSize: 13),
                     ),
                     const SizedBox(height: 20),
-
                     Text(
                       _formatCurrency(trx.amount),
                       style: TextStyle(
@@ -188,6 +402,29 @@ class _KalenderPageState extends State<KalenderPage> {
                         color: typeColor,
                       ),
                     ),
+
+                    if (!isIncome && trx.category.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.blueGrey.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.blueGrey.withOpacity(0.2)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.category_outlined, size: 14, color: Colors.blueGrey[700]),
+                            const SizedBox(width: 6),
+                            Text(
+                              trx.category,
+                              style: TextStyle(color: Colors.blueGrey[800], fontWeight: FontWeight.w600, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
 
                     if (trx.description != null && trx.description!.isNotEmpty) ...[
                       const SizedBox(height: 15),
@@ -204,18 +441,14 @@ class _KalenderPageState extends State<KalenderPage> {
                         ),
                       ),
                     ],
-
                     const SizedBox(height: 30),
-
                     Row(
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () {
                               Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Edit feature coming soon!")),
-                              );
+                              _showEditDialog(trx);
                             },
                             icon: const Icon(Icons.edit, size: 18, color: Colors.white),
                             label: const Text("Edit", style: TextStyle(color: Colors.white)),
@@ -232,6 +465,7 @@ class _KalenderPageState extends State<KalenderPage> {
                             onPressed: () {
                               showDialog(
                                   context: context,
+                                  // SAMA KEK DI DASHBOARD
                                   builder: (c) => AlertDialog(
                                     title: const Text("Delete Transaction?"),
                                     content: const Text("This action cannot be undone."),
@@ -269,30 +503,34 @@ class _KalenderPageState extends State<KalenderPage> {
     );
   }
 
+  // HELPERS
   List<TransactionDetail> _getEventsForDay(DateTime day) {
     final normalizedDay = DateTime(day.year, day.month, day.day);
     return _groupedEvents[normalizedDay] ?? [];
   }
 
+  // RUPIAH FORMAT
   String _formatCurrency(int amount) {
     return "Rp${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}";
   }
 
-  // FORCE English Locale ('en_US') agar outputnya "08:30" bukan format lokal lain
+  // FORMAT WAKTU
   String _formatTime(DateTime date) {
     return DateFormat('HH:mm', 'en_US').format(date);
   }
 
-  // FORCE English Locale agar nama bulan jadi "December" bukan "Desember"
+  // FORMAT TANGGAL
   String _formatDateFull(DateTime date) {
     return DateFormat('d MMMM yyyy', 'en_US').format(date);
   }
 
+  // FORMAT SINGKATAN BULAN
   String _getMonthName(int month) {
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     return months[month - 1];
   }
 
+  // LOGIKA KALKULASI KESELURUHAN
   Map<String, int> _calculateSummary(List<TransactionDetail> transactions) {
     int income = 0;
     int expense = 0;
@@ -303,6 +541,7 @@ class _KalenderPageState extends State<KalenderPage> {
     return {'income': income, 'expense': expense};
   }
 
+  // LOGIKA WARNA SAAT KLIK TANGGAL
   Widget _buildCustomDay(DateTime day, bool isSelected, bool isToday) {
     final events = _getEventsForDay(day);
     Color? markerColor;
@@ -394,7 +633,6 @@ class _KalenderPageState extends State<KalenderPage> {
               ],
             ),
             child: TableCalendar(
-              // Force English Locale di Kalender (biar hari & bulan jadi Mon/Tue & Jan/Feb)
               locale: 'en_US',
               firstDay: DateTime.utc(2020, 1, 1),
               lastDay: DateTime.utc(2030, 1, 1),
@@ -442,7 +680,7 @@ class _KalenderPageState extends State<KalenderPage> {
 
                 return Container(
                   width: double.infinity,
-                  margin: const EdgeInsets.only(top: 8),
+                  margin: const EdgeInsets.only(top: 8, right: 16, left: 16),
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                   decoration: BoxDecoration(
                       color: Colors.white,
@@ -499,15 +737,15 @@ class _KalenderPageState extends State<KalenderPage> {
     );
   }
 
+  // CARD BAGIAN BAWAH UTK NAMPILIN DETAIL
   Widget _buildTransactionCard(TransactionDetail trx) {
     bool isIncome = trx.type == 'income';
     Color mainColor = isIncome ? const Color(0xFF43A047) : const Color(0xFFE53935);
     Color bgColor = isIncome ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE);
     IconData icon = isIncome ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
 
-    // BUNGKUS DENGAN INKWELL AGAR BISA DIKLIK
     return InkWell(
-      onTap: () => _showDetailDialog(trx), // Munculkan Dialog saat diklik
+      onTap: () => _showDetailDialog(trx),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

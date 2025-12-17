@@ -34,12 +34,10 @@ class AuthService {
       // Firebase akan memverifikasi, lalu membuat sesi login di aplikasi kita.
       final UserCredential userCredential = await _auth.signInWithCredential(credential);
 
-      // Jika sukses sampai sini, kembalikan data User (nama, email, foto, uid) ke pemanggil fungsi.
+      // Jika sukses sampai sini, kembalikan data User (nama, email, uid) ke pemanggil fungsi.
       User? user = userCredential.user;
 
       if (user != null) {
-        // === TAMBAHAN LOGIKA FIRESTORE DI SINI ===
-
         // 1. Cek apakah user ini sudah ada di database?
         DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
 
@@ -60,7 +58,6 @@ class AuthService {
         } else {
           print("User lama login, data aman.");
         }
-        // =========================================
       }
       return user;
     } catch (e) {
@@ -78,10 +75,6 @@ class AuthService {
       );
 
       User? user = result.user;
-
-      // Kita tidak perlu cek/buat Firestore di sini karena asumsinya
-      // data sudah dibuat saat Register.
-
       return user;
     } catch (e) {
       print("Error Login Email: $e");
@@ -89,13 +82,10 @@ class AuthService {
     }
   }
 
-  // ==========================================================
-  // 2. REGISTER MANUAL (EMAIL & PASSWORD)
-  // ==========================================================
   Future<User?> signUpWithEmail({
     required String email,
     required String password,
-    required String name // Username dari input
+    required String name
   }) async {
     try {
       // A. Buat Akun di Firebase Auth
@@ -115,12 +105,11 @@ class AuthService {
         user = _auth.currentUser;
 
         // C. Buat Data di Firestore (SAMAKAN STRUKTURNYA DENGAN GOOGLE)
-        // Perhatikan: Kita TIDAK menyimpan password di sini.
         await _firestore.collection('users').doc(user!.uid).set({
           'uid': user.uid,
           'email': user.email,
-          'displayName': finalName, // Nama dari input register
-          'photoURL': null, // User manual biasanya gak punya foto awal
+          'displayName': finalName,
+          'photoURL': null,
           'income': 0,
           'expense': 0,
           'balance': 0,
@@ -138,7 +127,6 @@ class AuthService {
   Future<void> signOut() async {
     // Memutuskan koneksi dengan Google agar saat login lagi, bisa memilih akun berbeda.
     await _googleSignIn.disconnect();
-
     // Menghapus sesi login dari Firebase Auth di aplikasi.
     await _auth.signOut();
   }

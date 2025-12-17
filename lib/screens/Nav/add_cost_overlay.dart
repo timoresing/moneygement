@@ -7,16 +7,12 @@ import 'package:flutter/services.dart';
 void showAddCostOverlay(BuildContext context) {
   showGeneralDialog(
     context: context,
-    barrierDismissible: true, // Bisa ditutup dengan klik luar
-    barrierLabel: "Add Cost", // Label untuk aksesibilitas
-    barrierColor: Colors.black.withOpacity(0.2), // Warna gelap background
-    transitionDuration: const Duration(milliseconds: 250), // Kecepatan animasi
-
-    // --- ANIMASI MUNCUL (Scale & Fade) ---
+    barrierDismissible: true,
+    barrierLabel: "Add Cost",
+    barrierColor: Colors.black.withOpacity(0.2),
+    transitionDuration: const Duration(milliseconds: 250),
     transitionBuilder: (context, animation, secondaryAnimation, child) {
-      // Menggunakan Kurva animasi agar membal (seperti easeOutBack)
       final curvedValue = Curves.easeOutBack.transform(animation.value);
-
       return Transform.scale(
         scale: curvedValue,
         child: Opacity(
@@ -26,17 +22,17 @@ void showAddCostOverlay(BuildContext context) {
       );
     },
 
-    // --- ISI DIALOG ---
+    // ISI DIALOG
     pageBuilder: (context, animation, secondaryAnimation) {
       return Stack(
         children: [
-          // 1. Efek Blur Background
+          // Efek Blur Background
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
             child: Container(color: Colors.transparent),
           ),
 
-          // 2. Dialog Form
+          // Dialog Form
           Center(
             child: Material(
               color: Colors.transparent,
@@ -54,9 +50,7 @@ void showAddCostOverlay(BuildContext context) {
                     )
                   ],
                 ),
-                // Panggil Form kamu disini
                 child: _AddCostForm(
-                  // Karena ini Dialog, tutupnya pakai Navigator.pop
                   onClose: () => Navigator.pop(context),
                 ),
               ),
@@ -80,71 +74,71 @@ class _AddCostForm extends StatefulWidget {
 }
 
 class _AddCostFormState extends State<_AddCostForm> {
-  // 1. Controller untuk menangkap input Text
+  // Controller
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
 
   // Variabel Dropdown
   String? _selectedCategory;
-
-  // Loading state agar user tidak klik 2x
   bool _isLoading = false;
 
   @override
   void dispose() {
-    // Wajib dispose controller biar memori hp gak bocor
     _titleController.dispose();
     _descController.dispose();
     _amountController.dispose();
     super.dispose();
   }
 
-  // === FUNGSI UTAMA: SIMPAN PENGELUARAN KE FIRESTORE ===
+  // SIMPAN CATATAN KE FIRESTORE
   Future<void> _submitCost() async {
     final user = FirebaseAuth.instance.currentUser;
 
-    // 1. Validasi Input Dasar
+    // Validasi Input Dasar
     if (_titleController.text.isEmpty || _amountController.text.isEmpty || _selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Mohon isi Judul, Jumlah, dan Kategori!")),
+        const SnackBar(content: Text("Please fill the title, amount & category!"),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(20),
+          duration: Duration(seconds: 2),),
       );
       return;
     }
 
-    // 2. Bersihkan Input Angka (Hapus titik/koma)
+    // Bersihkan Input Angka (Hapus titik/koma)
     String cleanValue = _amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
     int amount = int.tryParse(cleanValue) ?? 0;
 
-    if (amount <= 0) return; // Kalau 0 jangan disimpan
-
-    setState(() => _isLoading = true); // Mulai loading
+    if (amount <= 0) return;
+    setState(() => _isLoading = true);
 
     try {
       DocumentReference userDoc = FirebaseFirestore.instance.collection('users').doc(user!.uid);
 
-      // A. SIMPAN RIWAYAT (History)
+      // SIMPAN RIWAYAT (History)
       await userDoc.collection('transactions').add({
         'title': _titleController.text,
-        'description': _descController.text, // Deskripsi boleh kosong
+        'description': _descController.text,
         'amount': amount,
-        'type': 'expense',       // <--- PENTING: Tipe Expense
+        'type': 'expense',
         'category': _selectedCategory,
         'date': FieldValue.serverTimestamp(),
       });
 
-      // B. UPDATE SALDO & TOTAL PENGELUARAN
+      // UPDATE SALDO & TOTAL PENGELUARAN
       await userDoc.update({
-        'balance': FieldValue.increment(-amount), // Saldo BERKURANG (Minus)
-        'expense': FieldValue.increment(amount),  // Total Pengeluaran BERTAMBAH
+        'balance': FieldValue.increment(-amount),
+        'expense': FieldValue.increment(amount),
       });
 
-      // C. Sukses! Tutup Dialog
+      // Tutup Dialog
       if (mounted) {
         widget.onClose();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Pengeluaran berhasil dicatat!"),
+            content: Text("Successfully Adding Post!"),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             margin: EdgeInsets.all(20),
@@ -155,7 +149,11 @@ class _AddCostFormState extends State<_AddCostForm> {
     } catch (e) {
       print("Error add cost: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Gagal menyimpan data")));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Failed to store data!"),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(20),
+          duration: Duration(seconds: 2),));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -180,7 +178,7 @@ class _AddCostFormState extends State<_AddCostForm> {
 
         // Input 1: Title
         TextField(
-          controller: _titleController, // Pasang Controller
+          controller: _titleController,
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
             labelText: "Cost title",
@@ -231,8 +229,8 @@ class _AddCostFormState extends State<_AddCostForm> {
 
         // Input 3: Description
         TextField(
-          controller: _descController, // Pasang Controller
-          maxLines: 3, // Kurangi dikit biar gak kepanjangan
+          controller: _descController,
+          maxLines: 3,
           decoration: InputDecoration(
             labelText: "Description (Optional)",
             hintText: 'Bought seafood & Chicken wings',
@@ -258,7 +256,7 @@ class _AddCostFormState extends State<_AddCostForm> {
           decoration: InputDecoration(
             labelText: "Amount",
             hintText: '100000',
-            prefixIcon: const Icon(Icons.money, size: 20), // Icon uang keluar
+            prefixIcon: const Icon(Icons.money, size: 20),
             hintStyle: TextStyle(color: Colors.black.withOpacity(0.4)),
             filled: true,
             fillColor: Colors.white,
@@ -271,14 +269,14 @@ class _AddCostFormState extends State<_AddCostForm> {
 
         const SizedBox(height: 25),
 
-        // Buttons
+        // BUTTONS
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             ElevatedButton(
               onPressed: widget.onClose,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF014037),
+                backgroundColor: const Color(0xFFDFA900),
                 padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -287,7 +285,6 @@ class _AddCostFormState extends State<_AddCostForm> {
             ),
 
             ElevatedButton(
-              // Kalau lagi loading, tombol disable biar gak double klik
               onPressed: _isLoading ? null : _submitCost,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF004D40),

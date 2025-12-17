@@ -1,11 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart'; // Tambahkan ini
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:tubes_pm_kelompok1/firebase_options.dart';
 import 'package:tubes_pm_kelompok1/screens/Nav/navbar.dart';
-import 'package:tubes_pm_kelompok1/screens/login.dart';
 import 'package:tubes_pm_kelompok1/screens/splash.dart';
-// import 'package:tubes_pm_kelompok1/screens/splash.dart'; // Opsional jika ingin loading pakai splash
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,19 +30,13 @@ class MyApp extends StatelessWidget {
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          // 1. Jika sedang proses cek status (loading awal)
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-            // Atau return const SplashScreen(); jika ingin tetap pakai splash
+            return const SplashScreen();
           }
-
-          // 2. Jika ada data User (Berarti sedang Login)
           if (snapshot.hasData) {
-            return const Navbar(); // Langsung masuk ke Menu Utama
+            return const Navbar();
           }
-
-          // 3. Jika tidak ada data (Berarti Logout/Belum Login)
-          return const LoginPage();
+          return const SplashScreen();
         },
       ),
     );
