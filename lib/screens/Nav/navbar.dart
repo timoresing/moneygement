@@ -69,7 +69,7 @@ class _NavbarState extends State<Navbar> {
                 Row(
                   children: [
                     _buildNavItem("Home", Icons.home_outlined, 0),
-                    _buildNavItem("Calander", Icons.calendar_today_outlined, 1),
+                    _buildNavItem("Calendar", Icons.calendar_today_outlined, 1),
                   ],
                 ),
 
