@@ -48,10 +48,11 @@ Moneygement adalah aplikasi berbasis mobile yang dirancang untuk memudahkan peng
 - Menghapus pengeluaran dan pemasukan
 
 #### Tambah Pengeluaran
-- Menambahkan pengeluaran baru
+- Menambahkan pengeluaran baru dan memilih kategorinya
 
 #### Analitik
 - Melihat laporan pengeluaran bulanan berupa perbandingan persentase tiap kategori
+- Melihat jumlah pengeluaran per satuan kategori
 
 #### Profile
 - Melihat profil
@@ -109,16 +110,18 @@ Beberapa syarat environment agar aplikasi dapat berjalan dengan lancar:
 #### Instalasi dan Setup
 1. Install Android Studio
 - Download dan install Android Studio melalui [Android Studio Official Website](https://developer.android.com/studio).
-2. Install Dart SDK
-- Download dan install Dart SDK melalui [Dart SDK Official Website](https://dart.dev/get-dart).
-3. Clone Repository
+2. Install Flutter SDK
+- Download dan install Flutter SDK melalui [Dart SDK Official Website](https://docs.flutter.dev/get-started/install).
+
+#### Langkah-Langkah Menjalankan Aplikasi
+1. Clone Repository
 - Clone repository di bawah ini ke lokal komputer,
   `https://github.com/timoresing/moneygement.git`
-4. Buka Android Studio dan open project yang sudah diclone.
-5. Jalankan command di bawah agar semua dependencies terinstall.
+2. Buka Android Studio dan open project yang sudah diclone.
+3. Jalankan command di bawah agar semua dependencies terinstall.
 `flutter pub get`
-6. Download dan tambahkan Virtual Device berupa Android Emulator di Android Studio.
-7. Jalankan aplikasi dengan memilih Virtual Device yang tepat dan tekan tombol Play.
+4. Download dan tambahkan Virtual Device berupa Android Emulator di Android Studio.
+5. Jalankan aplikasi dengan memilih Virtual Device yang tepat dan tekan tombol Play.
 
 [//]: # (This project is a starting point for a Flutter application.)
 [//]: # ()
