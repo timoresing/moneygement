@@ -10,11 +10,11 @@ Tim Pengembang: Kelompok 1
 - Perry Saputra Halim - 231402087
   Front-end & Back-end
 - Muhammad Hilmiy Arifqi - 231402102
-  Front-end & UI/UX design
+  UI/UX design
 - Nur Bayu - 231402105
   Documentation & Back-end
 - IzuKhairi Misrawi Rohali - 231402112
-  Back-end & UI/UX design
+  UI/UX design
 - Fadhil Al Harits Lubis - 231402116
   Documentation & Front-end
 
