@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../service/auth_service.dart';
+import 'package:flutter/services.dart'; // Import ini wajib
 
 class ProfilePage extends StatefulWidget {
   final VoidCallback? onProfileTap;
@@ -14,8 +15,20 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _currentPassController = TextEditingController();
+  final TextEditingController _newPassController = TextEditingController();
 
-  // Fungsi untuk Update Display Name
+  void _showLimitDialog() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Coming Soon"),
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.all(20),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   Future<void> _updateDisplayName() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null && _nameController.text.isNotEmpty) {
@@ -87,41 +100,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Fungsi untuk menampilkan dialog konfirmasi logout
-  void _showLogoutConfirmationDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Confirm Log Out"),
-          content: const Text("Are you sure you want to log out?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-              ),
-              onPressed: () async {
-                if (mounted) {
-                  Navigator.pop(context);
-                }
-                AuthService().signOut();
-              },
-              child: const Text("Log Out", style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  final TextEditingController _currentPassController = TextEditingController();
-  final TextEditingController _newPassController = TextEditingController();
-
-// Fungsi Change Password
+  // Fungsi Change Password
   void _showChangePasswordDialog() {
     _currentPassController.clear();
     _newPassController.clear();
@@ -164,10 +143,9 @@ class _ProfilePageState extends State<ProfilePage> {
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40)),
               onPressed: () async {
                 if (_currentPassController.text.isEmpty || _newPassController.text.isEmpty) {
-                  return; // Basic validation
+                  return;
                 }
 
-                // Call Auth Service
                 String? result = await AuthService().changePassword(
                   currentPassword: _currentPassController.text.trim(),
                   newPassword: _newPassController.text.trim(),
@@ -175,12 +153,15 @@ class _ProfilePageState extends State<ProfilePage> {
 
                 if (mounted) {
                   if (result == null) {
-                    Navigator.pop(context); // Success: Close Dialog
+                    Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Password updated!"), backgroundColor: Colors.green),
+                      const SnackBar(content: Text("Password updated!"),
+                          behavior: SnackBarBehavior.floating,
+                          margin: EdgeInsets.all(20),
+                          duration: Duration(seconds: 2),
+                          backgroundColor: Colors.green),
                     );
                   } else {
-                    // Error: Keep Dialog Open
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(result), backgroundColor: Colors.red),
                     );
@@ -188,6 +169,37 @@ class _ProfilePageState extends State<ProfilePage> {
                 }
               },
               child: const Text("Update", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Fungsi untuk menampilkan dialog konfirmasi logout
+  void _showLogoutConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Confirm Log Out"),
+          content: const Text("Are you sure you want to log out?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
+              onPressed: () async {
+                if (mounted) {
+                  Navigator.pop(context);
+                }
+                AuthService().signOut();
+              },
+              child: const Text("Log Out", style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -220,13 +232,13 @@ class _ProfilePageState extends State<ProfilePage> {
           );
         }
         final User? user = snapshot.data;
+
+        // Logika menyembunyikan ganti password jika login via Google
         bool isGoogleUser = user?.providerData.any(
                 (userInfo) => userInfo.providerId == 'google.com') ?? false;
         bool enableSecurityButton = !isGoogleUser;
-        if (user != null) {
-          print("Providers: ${user.providerData.map((e) => e.providerId).toList()}");
-        }
-        final String displayName = user?.displayName ?? "User"; // Default jika belum ada nama
+
+        final String displayName = user?.displayName ?? "User";
         final String email = user?.email ?? "";
         final String? photoUrl = user?.photoURL;
 
@@ -280,9 +292,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 ListTile(leading: const Icon(Icons.person),
                     title: const Text('Profile'),
                     onTap: () {
-                  Navigator.pop(context);
-                  if (widget.onProfileTap != null) widget.onProfileTap!();
-                }),
+                      Navigator.pop(context);
+                      if (widget.onProfileTap != null) widget.onProfileTap!();
+                    }),
                 ListTile(leading: const Icon(Icons.logout),
                     title: const Text('Log Out'),
                     onTap: _showLogoutConfirmationDialog
@@ -296,7 +308,7 @@ class _ProfilePageState extends State<ProfilePage> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               child: Column(
                 children: [
-                  // KARTU IDENTITAS USER (yang hijau)
+                  // KARTU IDENTITAS USER
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -326,7 +338,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // ROW UNTUK NAMA & ICON EDIT
                               Row(
                                 children: [
                                   Expanded(
@@ -337,7 +348,6 @@ class _ProfilePageState extends State<ProfilePage> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  // ICON EDIT NAMA
                                   InkWell(
                                     onTap: () => _showEditNameDialog(displayName),
                                     child: Container(
@@ -375,12 +385,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   // MENU SECTIONS
                   _buildSectionHeader("Account"),
                   _buildProfileOption(Icons.person_outline, "Personal Data", darkGreen, onTap: () => _showEditNameDialog(displayName)),
-                  _buildProfileOption(Icons.account_balance_wallet_outlined, "Bank & Cards", darkGreen),
+                  _buildProfileOption(Icons.warning_amber_rounded, "Set Daily Limit", darkGreen, onTap: _showLimitDialog),
 
                   const SizedBox(height: 20),
 
                   _buildSectionHeader("Settings"),
-                  _buildProfileOption(Icons.notifications_outlined, "Notifications", darkGreen),
                   _buildProfileOption(Icons.lock_outline, "Security & PIN", darkGreen, onTap: enableSecurityButton ? () => _showChangePasswordDialog() : null),
 
                   const SizedBox(height: 30),

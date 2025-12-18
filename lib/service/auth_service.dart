@@ -132,11 +132,7 @@ class AuthService {
     required String newPassword,
   }) async {
     User? user = _auth.currentUser;
-
-    // 1. Safety Check: Ensure user is logged in
     if (user == null) return "No user logged in";
-
-    // 2. Safety Check: Block Google Users
     bool isGoogleUser = user.providerData
         .any((userInfo) => userInfo.providerId == 'google.com');
 
