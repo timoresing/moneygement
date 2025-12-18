@@ -94,6 +94,35 @@ Library ini menyediakan ikon-ikon aplikasi yang bergaya iOS.
 #### Kegunaan:
 Library atau fitur ini digunakan sebagai tampilan awal atau layar pembuka saat aplikasi pertama kali dijalankan. Biasanya untuk memperkenalkan logo, nama aplikasi, dan proses inisialisasi aplikasi.
 
+## Permission
+### INTERNET
+Memberikan izin kepada aplikasi untuk mengakses jaringan internet. Izin ini penting agar aplikasi dapat mengakses ke internet seperti untuk kebutuhan Log In.
+
+#### ACCESS_NETWORK_STATE
+Memberikan izin kepada aplikasi untuk memeriksa status jaringan (apakah perangkat terhubung ke sumber jaringan).
+
+## Requirements
+#### Syarat
+Beberapa syarat environment agar aplikasi dapat berjalan dengan lancar:
+- **Dart SDK**: Versi terbaru (>= 3.9.2)
+- **Android Studio**: Versi terbaru dengan 
+- **Gradle**: Sesuai dengan versi Android Studio
+
+#### Instalasi dan Setup
+1. Setup API
+2. Install Android Studio
+- Download dan install Android Studio melalui [Android Studio Official Website](https://developer.android.com/studio).
+3. Install Dart SDK
+- Download dan install Dart SDK melalui [Dart SDK Official Website](https://dart.dev/get-dart).
+4. Clone Repository
+- Clone repository di bawah ini ke lokal komputer,
+  `https://github.com/timoresing/moneygement.git`
+5. Buka Android Studio dan open project yang sudah diclone.
+6. Jalankan command di bawah agar semua dependencies terinstall.
+`flutter pub get`
+7. Download dan tambahkan Virtual Device berupa Android Emulator di Android Studio.
+8. Jalankan aplikasi dengan memilih Virtual Device yang tepat dan tekan tombol Play.
+
 [//]: # (This project is a starting point for a Flutter application.)
 [//]: # ()
 [//]: # (A few resources to get you started if this is your first Flutter project:)
