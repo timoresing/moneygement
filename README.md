@@ -111,7 +111,7 @@ Beberapa syarat environment agar aplikasi dapat berjalan dengan lancar:
 1. Install Android Studio
 - Download dan install Android Studio melalui [Android Studio Official Website](https://developer.android.com/studio).
 2. Install Flutter SDK
-- Download dan install Flutter SDK melalui [Dart SDK Official Website](https://docs.flutter.dev/get-started/install).
+- Download dan install Flutter SDK melalui [Flutter SDK Official Website](https://docs.flutter.dev/get-started/install).
 
 #### Langkah-Langkah Menjalankan Aplikasi
 1. Clone Repository
