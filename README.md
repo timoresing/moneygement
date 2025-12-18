@@ -111,7 +111,7 @@ Beberapa syarat environment agar aplikasi dapat berjalan dengan lancar:
 #### Instalasi dan Setup
 1. Setup API
 2. Install Android Studio
-- Download dan install Android Studio melalui [Android Studio Official Website](https://developer.android.com/studio).
+Download dan install Android Studio melalui [Android Studio Official Website](https://developer.android.com/studio).
 3. Install Dart SDK
 - Download dan install Dart SDK melalui [Dart SDK Official Website](https://dart.dev/get-dart).
 4. Clone Repository

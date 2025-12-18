@@ -38,27 +38,9 @@ class AuthService {
       User? user = userCredential.user;
 
       if (user != null) {
-        // 1. Cek apakah user ini sudah ada di database?
-        DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
-
-        // 2. Jika data TIDAK ADA (!exists), berarti dia user baru login pertama kali
-        if (!userDoc.exists) {
-          // 3. Buat data awal (Income 0, Expense 0)
-          await _firestore.collection('users').doc(user.uid).set({
-            'uid': user.uid,
-            'email': user.email,
-            'displayName': user.displayName,
-            'photoURL': user.photoURL,
-            'income': 0,    // <-- Set Income 0
-            'expense': 0,   // <-- Set Cost/Expense 0
-            'balance': 0,   // <-- Total Balance (Income - Expense)
-            'createdAt': FieldValue.serverTimestamp(), // Catat waktu pembuatan
-          });
-          print("User baru dibuatkan database di Firestore!");
-        } else {
-          print("User lama login, data aman.");
-        }
+        await _checkAndCreateUserInFirestore(user);
       }
+
       return user;
     } catch (e) {
       print("Error Login: $e");
@@ -145,13 +127,58 @@ class AuthService {
     }
   }
 
+  Future<String?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    User? user = _auth.currentUser;
+
+    // 1. Safety Check: Ensure user is logged in
+    if (user == null) return "No user logged in";
+
+    // 2. Safety Check: Block Google Users
+    bool isGoogleUser = user.providerData
+        .any((userInfo) => userInfo.providerId == 'google.com');
+
+    if (isGoogleUser) {
+      return "Google accounts cannot change passwords here.";
+    }
+
+    print("Attempting Re-Auth for email: ${user.email}");
+    print("Password length sent: ${currentPassword.length}");
+
+    try {
+      String email = user.email!;
+
+      AuthCredential credential = EmailAuthProvider.credential(
+        email: email,
+        password: currentPassword,
+      );
+
+      await user.reauthenticateWithCredential(credential);
+
+      await user.updatePassword(newPassword);
+
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        return "Current password is incorrect.";
+      } else if (e.code == 'weak-password') {
+        return "Password must be at least 6 characters.";
+      }
+      return "Error: ${e.message}";
+    } catch (e) {
+      return "An unknown error occurred.";
+    }
+  }
+
   // Fungsi untuk Logout (Keluar Akun)
   Future<void> signOut() async {
 
     // Mengecek apakah log in menggunakan akun Google atau bukan
     try {
       final user = _auth.currentUser;
-      if (_auth.currentUser?.providerData.first.providerId == 'google.com') {
+      if (user?.providerData.first.providerId == 'google.com') {
         // Memutuskan koneksi dengan Google agar saat login lagi, bisa memilih akun berbeda.
         await _googleSignIn.signOut();
       }

@@ -118,6 +118,83 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  final TextEditingController _currentPassController = TextEditingController();
+  final TextEditingController _newPassController = TextEditingController();
+
+// Fungsi Change Password
+  void _showChangePasswordDialog() {
+    _currentPassController.clear();
+    _newPassController.clear();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Change Password"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _currentPassController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: "Current Password",
+                  prefixIcon: Icon(Icons.lock_outline),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 15),
+              TextField(
+                controller: _newPassController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: "New Password",
+                  prefixIcon: Icon(Icons.vpn_key),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF004D40)),
+              onPressed: () async {
+                if (_currentPassController.text.isEmpty || _newPassController.text.isEmpty) {
+                  return; // Basic validation
+                }
+
+                // Call Auth Service
+                String? result = await AuthService().changePassword(
+                  currentPassword: _currentPassController.text.trim(),
+                  newPassword: _newPassController.text.trim(),
+                );
+
+                if (mounted) {
+                  if (result == null) {
+                    Navigator.pop(context); // Success: Close Dialog
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Password updated!"), backgroundColor: Colors.green),
+                    );
+                  } else {
+                    // Error: Keep Dialog Open
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(result), backgroundColor: Colors.red),
+                    );
+                  }
+                }
+              },
+              child: const Text("Update", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // LOGIKA SAPAAN USER
   String _getGreeting() {
     var hour = DateTime.now().hour;
@@ -134,9 +211,21 @@ class _ProfilePageState extends State<ProfilePage> {
     final Color creamBg = const Color(0xFFF1ECDE);
 
     return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.userChanges(),
+      stream: FirebaseAuth.instance.authStateChanges(),
+      initialData: FirebaseAuth.instance.currentUser,
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting && snapshot.data == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
         final User? user = snapshot.data;
+        bool isGoogleUser = user?.providerData.any(
+                (userInfo) => userInfo.providerId == 'google.com') ?? false;
+        bool enableSecurityButton = !isGoogleUser;
+        if (user != null) {
+          print("Providers: ${user.providerData.map((e) => e.providerId).toList()}");
+        }
         final String displayName = user?.displayName ?? "User"; // Default jika belum ada nama
         final String email = user?.email ?? "";
         final String? photoUrl = user?.photoURL;
@@ -292,7 +381,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   _buildSectionHeader("Settings"),
                   _buildProfileOption(Icons.notifications_outlined, "Notifications", darkGreen),
-                  _buildProfileOption(Icons.lock_outline, "Security & PIN", darkGreen),
+                  _buildProfileOption(Icons.lock_outline, "Security & PIN", darkGreen, onTap: enableSecurityButton ? () => _showChangePasswordDialog() : null),
 
                   const SizedBox(height: 30),
 
