@@ -6,26 +6,23 @@ Nama aplikasi: Moneygement
 Tim Pengembang: Kelompok 1
 
 - Timothy Manuel Chandra - 231402062
-  Front-end & Back-end
+  (Front-end & Back-end)
 - Perry Saputra Halim - 231402087
-  Front-end & Back-end
+  (Front-end & Back-end)
 - Muhammad Hilmiy Arifqi - 231402102
-  Front-end & UI/UX design
+  (UI/UX design)
 - Nur Bayu - 231402105
-  Documentation & Back-end
+  (Documentation & Back-end)
 - IzuKhairi Misrawi Rohali - 231402112
-  Back-end & UI/UX design
+  (UI/UX design)
 - Fadhil Al Harits Lubis - 231402116
-  Documentation & Front-end
+  (Documentation & Front-end)
 
 ## Desc
 Moneygement adalah aplikasi berbasis mobile yang dirancang untuk memudahkan penggunanya dalam mengatur dan mengelola keuangannya. Mulai dari pencatatan pengeluaran & pemasukan, serta rangkuman pengeluaran & pemasukan per jangka waktu yang dapat ditentukan pengguna sendiri.
 
 ## UI Design
 [Link Figma](https://www.figma.com/design/YIaG2HQBSinfTLiUmwndMx/Figma-Project-PM-Kelompok-1?node-id=0-1&t=BUz2gTUJJ7SYeMYS-1)
-
-## API
-[Moneygement API](https://github.com/Perry1611/moneygement-backend)
 
 ## Features
 
@@ -59,6 +56,7 @@ Moneygement adalah aplikasi berbasis mobile yang dirancang untuk memudahkan peng
 #### Profile
 - Melihat profil
 - Mengubah nama/username
+- Mengubah password
 - Melakukan Log Out
 
 ## Library
@@ -109,19 +107,18 @@ Beberapa syarat environment agar aplikasi dapat berjalan dengan lancar:
 - **Gradle**: Sesuai dengan versi Android Studio
 
 #### Instalasi dan Setup
-1. Setup API
-2. Install Android Studio
-Download dan install Android Studio melalui [Android Studio Official Website](https://developer.android.com/studio).
-3. Install Dart SDK
+1. Install Android Studio
+- Download dan install Android Studio melalui [Android Studio Official Website](https://developer.android.com/studio).
+2. Install Dart SDK
 - Download dan install Dart SDK melalui [Dart SDK Official Website](https://dart.dev/get-dart).
-4. Clone Repository
+3. Clone Repository
 - Clone repository di bawah ini ke lokal komputer,
   `https://github.com/timoresing/moneygement.git`
-5. Buka Android Studio dan open project yang sudah diclone.
-6. Jalankan command di bawah agar semua dependencies terinstall.
+4. Buka Android Studio dan open project yang sudah diclone.
+5. Jalankan command di bawah agar semua dependencies terinstall.
 `flutter pub get`
-7. Download dan tambahkan Virtual Device berupa Android Emulator di Android Studio.
-8. Jalankan aplikasi dengan memilih Virtual Device yang tepat dan tekan tombol Play.
+6. Download dan tambahkan Virtual Device berupa Android Emulator di Android Studio.
+7. Jalankan aplikasi dengan memilih Virtual Device yang tepat dan tekan tombol Play.
 
 [//]: # (This project is a starting point for a Flutter application.)
 [//]: # ()
